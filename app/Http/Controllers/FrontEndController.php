@@ -11,6 +11,10 @@ class FrontEndController extends Controller
     private $data = [];
 
     function index(){
-      return view('welcome', $this->data);
+      return view('shared.login', $this->data);
+    }
+
+    function dashboard(){
+      return view('shared.home', $this->data);
     }
 }

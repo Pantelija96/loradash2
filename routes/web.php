@@ -2,8 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers;
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -20,3 +18,7 @@ use App\Http\Controllers;
 });*/
 
 Route::get('/','FrontEndController@index');
+Route::post('/login','BackEndController@login')->name('loginroute');
+Route::get('/logout','BackEndController@logout');
+
+Route::get('/home','FrontEndController@dashboard');
