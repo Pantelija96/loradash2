@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Sensor;
 
 class BackEndController extends Controller
 {
@@ -32,5 +33,28 @@ class BackEndController extends Controller
       return redirect('/');
     }
 
-    
+    public function changePassword(Request $request){
+      $this->user = new User();
+      $this->user->idKorisnikSistema = $request->session()->get('korisnik')->idKorisnikSistema;
+      $this->user->lozinka = $request->get('newPassword');
+
+      $result = $this->user->changePassword();
+
+      return dd($result);
+    }
+
+    public function addUser(Request $request){
+      $this->user = new User();
+      $this->user->ime = $request->get('ime');
+      $this->user->prezime = $request->get('prezime');
+      $this->user->email = $request->get('email');
+      $this->user->lozinka = $request->get('password');
+
+      $result = $this->user->insertNewUser();
+      return redirect('/allusers');
+    }
+
+    public function addSensor(Request $requrest){
+      return dd($requrest->all());
+    }
 }

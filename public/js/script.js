@@ -306,6 +306,9 @@ function checkPasswords(){
   if(loz1 == loz2){
     document.getElementById("submitNewPassword").disabled = false;
   }
+  else{
+    document.getElementById("submitNewPassword").disabled = true;
+  }
 }
 
 /*LETO ZIMA SKRIVANJE*/

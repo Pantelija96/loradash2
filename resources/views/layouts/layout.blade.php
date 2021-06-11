@@ -40,31 +40,11 @@
 
             <!-- Nav Item - Dashboard -->
             <li class="nav-item active">
-                <a class="nav-link" href="index.html">
+                <a class="nav-link" href="{{ url('/home') }}">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span></a>
             </li>
 
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
-            <div class="sidebar-heading">
-                Korisnici
-            </div>
-
-            <li class="nav-item">
-                <a class="nav-link" href="korisnici.html">
-                    <i class="fas fa-fw fa-user"></i>
-                    <span>Korisnici</span></a>
-            </li>
-
-
-
-            <li class="nav-item">
-                <a class="nav-link" href="dodavanje-korisnika.html">
-                    <i class="fas fa-fw fa-user-plus"></i>
-                    <span>Dodavanje korisnika</span></a>
-            </li>
 
             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">
@@ -79,19 +59,6 @@
                     <span>Dodavanje usluge korisniku</span></a>
             </li>
 
-
-            <li class="nav-item">
-                <a class="nav-link" href="dodavanje-usluge.html">
-                    <i class="fas fa-fw fa-plus-circle"></i>
-                    <span>Dodavanje Usluge</span></a>
-            </li>
-
-            <li class="nav-item">
-                <a class="nav-link" href="dodavanje-senzora.html">
-                    <i class="fas fa-fw fa-plus-circle"></i>
-                    <span>Dodavanje tipa senzora</span></a>
-            </li>
-
             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">
 
@@ -100,16 +67,28 @@
             </div>
 
             <li class="nav-item">
-                <a class="nav-link" href="administratori.html">
+                <a class="nav-link" href="{{ url('/allusers') }}">
                     <i class="fas fa-fw fa-tools"></i>
-                    <span>Administratori</span></a>
+                    <span>Podrška - nalozi</span></a>
             </li>
 
 
             <li class="nav-item">
-                <a class="nav-link" href="dodavanje-administratora.html">
+                <a class="nav-link" href="{{ url('/adduser') }}">
                     <i class="fas fa-fw fa-plus-circle"></i>
-                    <span>Dodavanje Administratora</span></a>
+                    <span>Dodavanje naloga podrške</span></a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url('/addsensor') }}">
+                    <i class="fas fa-fw fa-plus-circle"></i>
+                    <span>Dodavanje senzora</span></a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url('/allsensors') }}">
+                    <i class="fas fa-fw fa-tools"></i>
+                    <span>Svi senzori</span></a>
             </li>
 
 
@@ -151,7 +130,7 @@
                         <!-- Nav Item - User Information -->
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small"></span>
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small"><strong>{{ session()->get('korisnik')->naziv }}</strong> | {{ session()->get('korisnik')->ime.' '.session()->get('korisnik')->prezime }}</span>
                                 <i class="fas fa-user-circle fa-2x"></i>
                             </a>
                             <!-- Dropdown - logout -->
@@ -160,7 +139,7 @@
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Izlaz
                                 </a>
-                                <a class="dropdown-item" href="{{ url('/#') }}">
+                                <a class="dropdown-item" href="{{ url('/changepassword') }}">
                                     <i class="fas fa-tools mr-2 text-gray-400"></i>
                                     Promena lozinke
                                 </a>

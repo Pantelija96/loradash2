@@ -22,3 +22,17 @@ Route::post('/login','BackEndController@login')->name('loginroute');
 Route::get('/logout','BackEndController@logout');
 
 Route::get('/home','FrontEndController@dashboard');
+
+Route::get('/changepassword','FrontEndController@changePassword');
+Route::post('/passwordchange','BackEndController@changePassword')->name('passwordchange');
+
+
+Route::get('/allusers','FrontEndController@showAllUsers');
+Route::get('/adduser','FrontEndController@addUser');
+Route::post('/adduser','BackEndController@addUser')->name('addUser');
+Route::get('/useredit/{id}','FrontEndController@showEditUser');
+
+
+Route::get('/allsensors','FrontEndController@showAllSensors');
+Route::get('/addsensor','FrontEndController@addSensor');
+Route::post('/addsensor','BackEndController@addSensor')->name('addSensor');
