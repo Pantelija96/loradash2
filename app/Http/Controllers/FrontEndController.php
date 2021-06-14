@@ -43,4 +43,8 @@ class FrontEndController extends Controller
       return view('shared.addSensor', $this->data);
     }
 
+    function addService(){
+      return view('shared.addService', $this->data);
+    }
+
 }

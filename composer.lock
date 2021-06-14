@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7759431e303e2d722a264a8a991a9e84",
+    "content-hash": "a9a56580ea9388b74defd016bfb132ab",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -2314,6 +2314,65 @@
                 }
             ],
             "time": "2020-08-18T17:17:46+00:00"
+        },
+        {
+            "name": "ricorocks-digital-agency/soap",
+            "version": "1.3.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Ricorocks-Digital-Agency/Soap.git",
+                "reference": "ef907e5dc367f7f8daf2903bc882fbbcedb5c079"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Ricorocks-Digital-Agency/Soap/zipball/ef907e5dc367f7f8daf2903bc882fbbcedb5c079",
+                "reference": "ef907e5dc367f7f8daf2903bc882fbbcedb5c079",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/support": "^8.16"
+            },
+            "require-dev": {
+                "orchestra/testbench": "^6.5",
+                "phpunit/phpunit": "^9.4",
+                "spatie/ray": "^1.17"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "RicorocksDigitalAgency\\Soap\\Providers\\SoapServiceProvider"
+                    ],
+                    "aliases": [
+                        "RicorocksDigitalAgency\\Soap\\Facades\\Soap"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "RicorocksDigitalAgency\\Soap\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Luke Downing",
+                    "email": "luke@ricorocks.agency"
+                },
+                {
+                    "name": "Sam Rowden",
+                    "email": "sam@ricorocks.agency"
+                }
+            ],
+            "description": "A SOAP client that provides a clean interface for handling requests and responses.",
+            "support": {
+                "issues": "https://github.com/Ricorocks-Digital-Agency/Soap/issues",
+                "source": "https://github.com/Ricorocks-Digital-Agency/Soap/tree/1.3.0"
+            },
+            "time": "2021-06-03T15:13:57+00:00"
         },
         {
             "name": "swiftmailer/swiftmailer",

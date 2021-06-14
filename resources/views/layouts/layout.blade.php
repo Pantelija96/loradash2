@@ -54,7 +54,7 @@
             </div>
 
             <li class="nav-item">
-                <a class="nav-link" href="dodavanje-usluge-korisniku.html">
+                <a class="nav-link" href="{{ url('/addservice') }}">
                     <i class="fas fa-fw fa-shopping-cart"></i>
                     <span>Dodavanje usluge korisniku</span></a>
             </li>

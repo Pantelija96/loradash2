@@ -36,3 +36,13 @@ Route::get('/useredit/{id}','FrontEndController@showEditUser');
 Route::get('/allsensors','FrontEndController@showAllSensors');
 Route::get('/addsensor','FrontEndController@addSensor');
 Route::post('/addsensor','BackEndController@addSensor')->name('addSensor');
+
+
+Route::get('/addservice','FrontEndController@addService');
+
+
+
+
+Route::group(['prefix'=> '/ajax'], function(){
+  Route::get('/finduser/{userId}','BackEndController@findUser');
+});

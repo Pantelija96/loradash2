@@ -4,10 +4,36 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Sensor;
+use RicorocksDigitalAgency\Soap\Facades\Soap;
+
+use SoapClient;
 
 class BackEndController extends Controller
 {
-    //
+    //Soap
+    public $client;
+    private function _client($F5srv){
+      $opts = array(
+        'ssl' => array(
+          'verify_peer' => false,
+          'verify_peer_name' => false,
+          'allow_self_signed' => true
+        )
+      );
+
+      $context = stream_context_create($opts);
+      $wsdl = "wsdl path";
+
+      try{
+        $this->client = new \SoapClient($wsdl, array('stream_context' => $context, 'trace'=> true,'login' => 'test', 'password'=> 'test2'));
+
+        return $this->client;
+      }
+
+      catch(\Exception $e){
+        Log::info('Caught Exception in client'. $e->getMessage());
+      }
+    }
 
     private $user;
 
@@ -56,5 +82,20 @@ class BackEndController extends Controller
 
     public function addSensor(Request $requrest){
       return dd($requrest->all());
+    }
+
+    public function findUser($userId){
+      //soap
+
+      $this->client = $this->_client($userId);
+
+
+
+      $obj = [
+        "test" => 123213,
+        "test2" => "string",
+        "test3" => $userId
+      ];
+      return json_encode($obj);
     }
 }

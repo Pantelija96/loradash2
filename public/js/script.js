@@ -48,6 +48,45 @@
 
 })(jQuery); // End of use strict
 
+function pronadjiKupca(){
+  var sifraKorisnika = document.getElementById('sifraKorisnika').value;
+  alert(sifraKorisnika);
+  $.ajax({
+    type: 'GET',
+    url: baseUrl+'ajax/finduser/'+sifraKorisnika,
+    success: function (data) {
+        console.log(data);
+    },
+    error: function (xhr, status, error) {
+        alert('Desila se greska, proveriti console.');
+        console.log(xhr);
+        console.log(status);
+        console.log(error);
+    }
+});
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 var senzori;
 function getSensors(){
   var xmlhttp = new XMLHttpRequest();
