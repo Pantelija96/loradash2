@@ -4,36 +4,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Sensor;
-use RicorocksDigitalAgency\Soap\Facades\Soap;
 
 use SoapClient;
 
 class BackEndController extends Controller
 {
-    //Soap
-    public $client;
-    private function _client($F5srv){
-      $opts = array(
-        'ssl' => array(
-          'verify_peer' => false,
-          'verify_peer_name' => false,
-          'allow_self_signed' => true
-        )
-      );
-
-      $context = stream_context_create($opts);
-      $wsdl = "wsdl path";
-
-      try{
-        $this->client = new \SoapClient($wsdl, array('stream_context' => $context, 'trace'=> true,'login' => 'test', 'password'=> 'test2'));
-
-        return $this->client;
-      }
-
-      catch(\Exception $e){
-        Log::info('Caught Exception in client'. $e->getMessage());
-      }
-    }
 
     private $user;
 
@@ -87,14 +62,33 @@ class BackEndController extends Controller
     public function findUser($userId){
       //soap
 
-      $this->client = $this->_client($userId);
+      try{
+        //$soapclient = new SoapClient('http://dneonline.com/calculator.asmx?wsdl');
+        //$response = $soapclient->add(1,2);
 
+        $soapclient = new SoapClient('http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL');
+        //$param = array('ubiNum'=>$userId);
+        $response = $soapclient->ListOfCurrenciesByName();
 
+        /*var_dump($response);
+        echo '<br><br><br>';
+        $array = json_decode(json_encode($response), true);
+        print_r($array);
+         echo '<br><br><br>';
+        echo  $array['GetCountriesAvailableResult']['CountryCode']['5']['Description'];
+        	  echo '<br><br><br>';
+        	foreach($array as $item) {
+        		echo '<pre>'; var_dump($item);
+        	}*/
+      }catch(Exception $e){
+      	$response = $e->getMessage();
+      }
 
       $obj = [
         "test" => 123213,
         "test2" => "string",
-        "test3" => $userId
+        "test3" => $userId,
+        'response' => $response
       ];
       return json_encode($obj);
     }
