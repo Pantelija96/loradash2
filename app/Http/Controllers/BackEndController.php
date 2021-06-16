@@ -67,8 +67,16 @@ class BackEndController extends Controller
         //$response = $soapclient->add(1,2);
 
         $soapclient = new SoapClient('http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL');
-        //$param = array('ubiNum'=>$userId);
-        $response = $soapclient->ListOfCurrenciesByName();
+        //body of soap header
+        $headerBody = array(
+          'invokerId' => 10,
+          'invokingSystem' => "BillingIoT",
+          'invokingUser' => "test"
+        );
+        $header = new SoapHeader("http://www.telekom.rs/services/GetAccountDetails", "test", $headerBody);
+        $soapclient->__setSoapHeaders()
+        $param = array('PIB'=>$userId);
+        $response = $soapclient->TS1GetAccountDetailsInputMessage($param);
 
         /*var_dump($response);
         echo '<br><br><br>';
