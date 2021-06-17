@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Sensor;
 
 use SoapClient;
+use SoapHeader;
 
 class BackEndController extends Controller
 {
@@ -66,17 +67,20 @@ class BackEndController extends Controller
         //$soapclient = new SoapClient('http://dneonline.com/calculator.asmx?wsdl');
         //$response = $soapclient->add(1,2);
 
-        $soapclient = new SoapClient('http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL');
+        $soapclient = new SoapClient('http://10.1.21.245:7810/services/GetAccountDetails?wsdl');
         //body of soap header
         $headerBody = array(
           'invokerId' => 10,
           'invokingSystem' => "BillingIoT",
           'invokingUser' => "test"
         );
-        $header = new SoapHeader("http://www.telekom.rs/services/GetAccountDetails", "test", $headerBody);
-        $soapclient->__setSoapHeaders()
-        $param = array('PIB'=>$userId);
-        $response = $soapclient->TS1GetAccountDetailsInputMessage($param);
+        $header = new SoapHeader("10.1.21.245:7810/services/GetAccountDetails", "test", $headerBody);
+        $soapclient->__setSoapHeaders();
+		//$response = $soapclient->__getFunctions();
+        $param = array('TS1GetAccountDetailsInputMessage'=>[
+			       'PIB' => 101349980
+		    ]);
+        $response = $soapclient->GetAccountDetails($param);
 
         /*var_dump($response);
         echo '<br><br><br>';
