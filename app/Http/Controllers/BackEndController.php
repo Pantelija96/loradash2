@@ -61,47 +61,48 @@ class BackEndController extends Controller
     }
 
     public function findUser($userId){
-      //soap
 
       try{
-        //$soapclient = new SoapClient('http://dneonline.com/calculator.asmx?wsdl');
-        //$response = $soapclient->add(1,2);
 
-        $soapclient = new SoapClient('http://10.1.21.245:7810/services/GetAccountDetails?wsdl');
-        //body of soap header
-        $headerBody = array(
-          'invokerId' => 10,
-          'invokingSystem' => "BillingIoT",
-          'invokingUser' => "test"
-        );
-        $header = new SoapHeader("10.1.21.245:7810/services/GetAccountDetails", "test", $headerBody);
-        $soapclient->__setSoapHeaders();
-		//$response = $soapclient->__getFunctions();
-        $param = array('TS1GetAccountDetailsInputMessage'=>[
-			       'PIB' => 101349980
-		    ]);
-        $response = $soapclient->GetAccountDetails($param);
+    $curl = curl_init();
 
-        /*var_dump($response);
-        echo '<br><br><br>';
-        $array = json_decode(json_encode($response), true);
-        print_r($array);
-         echo '<br><br><br>';
-        echo  $array['GetCountriesAvailableResult']['CountryCode']['5']['Description'];
-        	  echo '<br><br><br>';
-        	foreach($array as $item) {
-        		echo '<pre>'; var_dump($item);
-        	}*/
+    curl_setopt_array($curl, array(
+      CURLOPT_URL => "http://10.1.21.245:7810/services/GetAccountDetails?wsdl",
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_CUSTOMREQUEST => "POST",
+      CURLOPT_POSTFIELDS =>
+        "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:shar=\"http://www.telekom.rs/EAI/SharedResources\" xmlns:get=\"http://www.telekom.rs/services/GetAccountDetails\">\n
+      	  <soapenv:Header>\n
+				<shar:Header>\n
+					<shar:invokerId>10</shar:invokerId>\n
+					<!--Optional:-->\n
+					<shar:invokingSystem>BillingIoT</shar:invokingSystem>\n
+					<!--Optional:-->\n
+					<shar:invokingUser>test</shar:invokingUser>\n
+					<!-- uneti user koji poziva WS -->\n
+				</shar:Header>\n
+			</soapenv:Header>\n
+      	  <soapenv:Body>\n
+      		    <get:TS1GetAccountDetailsInputMessage>\n
+					<get:PIB>".$userId."</get:PIB>\n
+				</get:TS1GetAccountDetailsInputMessage>\n
+      	  </soapenv:Body>\n
+        </soapenv:Envelope>",
+        CURLOPT_HTTPHEADER => array("content-type: text/xml"),
+      ));
+
+      $response = curl_exec($curl);
+      $err = curl_error($curl);
+
+      curl_close($curl);
+
       }catch(Exception $e){
       	$response = $e->getMessage();
       }
 
       $obj = [
-        "test" => 123213,
-        "test2" => "string",
-        "test3" => $userId,
         'response' => $response
       ];
-      return json_encode($obj);
+      return ($obj);
     }
 }
