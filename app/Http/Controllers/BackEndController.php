@@ -100,8 +100,18 @@ class BackEndController extends Controller
       	$response = $e->getMessage();
       }
 
+        $res1 = str_replace(":","", $response);
+        $res2 = str_replace("\"","'", $res1);
+        $res3 = str_replace("%20","", $res2);
+
+        $xmlString = <<<XML
+            $res3
+        XML;
+
+        $xml = simplexml_load_string($xmlString);
+
       $obj = [
-        'response' => $response
+        'response' => $xml->outBody
       ];
       return ($obj);
     }

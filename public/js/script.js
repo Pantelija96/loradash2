@@ -46,7 +46,7 @@
     e.preventDefault();
   });
 
-})(jQuery); 
+})(jQuery);
 
 
 
@@ -56,7 +56,7 @@
 	License: http://creativecommons.org/licenses/LGPL/2.1/
    Version: 0.9
 	Author:  Stefan Goessner/2006
-	Web:     http://goessner.net/ 
+	Web:     http://goessner.net/
 */
 function xml2json(xml, tab) {
    var X = {
@@ -212,9 +212,9 @@ function xml2json(xml, tab) {
 function parseXml(xml) {
    var dom = null;
    if (window.DOMParser) {
-      try { 
-         dom = (new DOMParser()).parseFromString(xml, "text/xml"); 
-      } 
+      try {
+         dom = (new DOMParser()).parseFromString(xml, "text/xml");
+      }
       catch (e) { dom = null; }
    }
    else if (window.ActiveXObject) {
@@ -224,7 +224,7 @@ function parseXml(xml) {
          if (!dom.loadXML(xml)) // parse error ..
 
             window.alert(dom.parseError.reason + dom.parseError.srcText);
-      } 
+      }
       catch (e) { dom = null; }
    }
    else
@@ -242,19 +242,24 @@ function pronadjiKupca(){
     type: 'GET',
     url: baseUrl+'ajax/finduser/'+sifraKorisnika,
     success: function (data) {
-	
-		var nazivPre = data.response.split('<out:BusinessName xmlns:out="http://www.siebel.com/xml/TS1%20Account%20IOInternal">')[1];
-		var naziv = nazivPre.split('</out:BusinessName>')[0];
-		
-		var pibPre = data.response.split('<out:AccountPIB xmlns:out="http://www.siebel.com/xml/TS1%20Account%20IOInternal">')[1];
-		var pib = pibPre.split('</out:AccountPIB>')[0];
-		
-		var mbPre = data.response.split('<out:AccountMB xmlns:out="http://www.siebel.com/xml/TS1%20Account%20IOInternal">')[1];
-		var mb = mbPre.split('</out:AccountMB>')[0];
-		
-		document.getElementById('userName').value = naziv;
-		document.getElementById('inputPIB').value = pib;
-		document.getElementById('inputMB').value = mb;
+        //console.log(data.response);
+
+        if(Object.keys(data.response).length == 1){
+            //samo jedan zapis je dohvacen soap-om
+            var naziv = data.response.io3TS1GetAccountDetailsOutputMessage.io3Account.outAccountName;
+            var pib = data.response.io3TS1GetAccountDetailsOutputMessage.io3Account.outAccountPIB;
+            var mb = data.response.io3TS1GetAccountDetailsOutputMessage.io3Account.outAccountMB;
+
+            document.getElementById('userName').value = naziv;
+            document.getElementById('inputPIB').value = pib;
+            document.getElementById('inputMB').value = mb;
+        }
+        else{
+            //postoji vise zapisa sa soap-a
+            alert("Postoji vise zapisa!");
+        }
+
+
     },
     error: function (xhr, status, error) {
         alert('Desila se greska, proveriti console.');
@@ -559,7 +564,7 @@ $(function () {
           $("#probniPeriodCard").hide();
           document.getElementById("brojTrialMeseci").value = 0;
           document.getElementById("brojTrialDana").value = 0;
-          $('#probniPeriod'). children("option:selected"). val() = 0;
+          $('#probniPeriod').children("option:selected").val() = 0;
       }
   });
 });
