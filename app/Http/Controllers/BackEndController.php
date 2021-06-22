@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Sensor;
@@ -13,65 +14,70 @@ class BackEndController extends Controller
 
     private $user;
 
-    public function login(Request $request){
-      $this->user = new User();
-      $this->user->email = $request->get('email');
-      $this->user->lozinka = $request->get('password');
+    public function login(Request $request)
+    {
+        $this->user = new User();
+        $this->user->email = $request->get('email');
+        $this->user->lozinka = $request->get('password');
 
-      $userResult = $this->user->login();
+        $userResult = $this->user->login();
 
-      if($userResult){
-        $request->session()->put('korisnik', $userResult);
-        return redirect('/home');
-      }
-      else{
+        if ($userResult) {
+            $request->session()->put('korisnik', $userResult);
+            return redirect('/home');
+        } else {
+            return redirect('/');
+        }
+    }
+
+    public function logout(Request $request)
+    {
+        $request->session()->forget('korisnik');
+        $request->session()->flush();
         return redirect('/');
-      }
     }
 
-    public function logout(Request $request){
-      $request->session()->forget('korisnik');
-      $request->session()->flush();
-      return redirect('/');
+    public function changePassword(Request $request)
+    {
+        $this->user = new User();
+        $this->user->idKorisnikSistema = $request->session()->get('korisnik')->idKorisnikSistema;
+        $this->user->lozinka = $request->get('newPassword');
+
+        $result = $this->user->changePassword();
+
+        return dd($result);
     }
 
-    public function changePassword(Request $request){
-      $this->user = new User();
-      $this->user->idKorisnikSistema = $request->session()->get('korisnik')->idKorisnikSistema;
-      $this->user->lozinka = $request->get('newPassword');
+    public function addUser(Request $request)
+    {
+        $this->user = new User();
+        $this->user->ime = $request->get('ime');
+        $this->user->prezime = $request->get('prezime');
+        $this->user->email = $request->get('email');
+        $this->user->lozinka = $request->get('password');
 
-      $result = $this->user->changePassword();
-
-      return dd($result);
+        $result = $this->user->insertNewUser();
+        return redirect('/allusers');
     }
 
-    public function addUser(Request $request){
-      $this->user = new User();
-      $this->user->ime = $request->get('ime');
-      $this->user->prezime = $request->get('prezime');
-      $this->user->email = $request->get('email');
-      $this->user->lozinka = $request->get('password');
-
-      $result = $this->user->insertNewUser();
-      return redirect('/allusers');
+    public function addSensor(Request $requrest)
+    {
+        return dd($requrest->all());
     }
 
-    public function addSensor(Request $requrest){
-      return dd($requrest->all());
-    }
+    public function findUser($userId)
+    {
 
-    public function findUser($userId){
+        try {
 
-      try{
+            $curl = curl_init();
 
-    $curl = curl_init();
-
-    curl_setopt_array($curl, array(
-      CURLOPT_URL => "http://10.1.21.245:7810/services/GetAccountDetails?wsdl",
-      CURLOPT_RETURNTRANSFER => true,
-      CURLOPT_CUSTOMREQUEST => "POST",
-      CURLOPT_POSTFIELDS =>
-        "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:shar=\"http://www.telekom.rs/EAI/SharedResources\" xmlns:get=\"http://www.telekom.rs/services/GetAccountDetails\">\n
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => "http://10.1.21.245:7810/services/GetAccountDetails?wsdl",
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_CUSTOMREQUEST => "POST",
+                CURLOPT_POSTFIELDS =>
+                    "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:shar=\"http://www.telekom.rs/EAI/SharedResources\" xmlns:get=\"http://www.telekom.rs/services/GetAccountDetails\">\n
       	  <soapenv:Header>\n
 				<shar:Header>\n
 					<shar:invokerId>10</shar:invokerId>\n
@@ -84,25 +90,25 @@ class BackEndController extends Controller
 			</soapenv:Header>\n
       	  <soapenv:Body>\n
       		    <get:TS1GetAccountDetailsInputMessage>\n
-					<get:PIB>".$userId."</get:PIB>\n
+					<get:PIB>" . $userId . "</get:PIB>\n
 				</get:TS1GetAccountDetailsInputMessage>\n
       	  </soapenv:Body>\n
         </soapenv:Envelope>",
-        CURLOPT_HTTPHEADER => array("content-type: text/xml"),
-      ));
+                CURLOPT_HTTPHEADER => array("content-type: text/xml"),
+            ));
 
-      $response = curl_exec($curl);
-      $err = curl_error($curl);
+            $response = curl_exec($curl);
+            $err = curl_error($curl);
 
-      curl_close($curl);
+            curl_close($curl);
 
-      }catch(Exception $e){
-      	$response = $e->getMessage();
-      }
+        } catch (Exception $e) {
+            $response = $e->getMessage();
+        }
 
-        $res1 = str_replace(":","", $response);
-        $res2 = str_replace("\"","'", $res1);
-        $res3 = str_replace("%20","", $res2);
+        $res1 = str_replace(":", "", $response);
+        $res2 = str_replace("\"", "'", $res1);
+        $res3 = str_replace("%20", "", $res2);
 
         $xmlString = <<<XML
             $res3
@@ -110,9 +116,17 @@ class BackEndController extends Controller
 
         $xml = simplexml_load_string($xmlString);
 
-      $obj = [
-        'response' => $xml->outBody
-      ];
-      return ($obj);
+        $obj = [
+            'response' => $xml->outBody
+        ];
+        return ($obj);
+    }
+
+    public function sensorDetails($sensorId)
+    {
+        $obj = [
+            'response' => Sensor::getOne($sensorId)[0]
+        ];
+        return ($obj);
     }
 }

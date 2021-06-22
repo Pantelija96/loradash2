@@ -41,6 +41,17 @@ class Sensor extends Model
       }
     }
 
+    public static function getOne($id){
+        try{
+            return DB::table('senzor')
+                ->where('idSenzor','=', $id)
+                ->get();
+        }
+        catch(\Exception $e){
+            \Log::error('Greska pri dohvatanju jednog senzora staticki, greska: '.$e->getMessage());
+        }
+    }
+
     public function insertSenzor(){
       try{
         return DB::table($this->tabela)

@@ -209,6 +209,8 @@
     <script src="{{ asset('/') }}vendor/datatables/jquery.dataTables.js"></script>
     <script src="{{ asset('/') }}vendor/datatables/dataTables.bootstrap4.js"></script>
     <script src="{{ asset('/') }}js/demo/datatables-demo.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     <script src="{{ asset('/') }}js/script.js"></script>
 
 

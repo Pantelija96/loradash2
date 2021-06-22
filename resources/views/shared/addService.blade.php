@@ -5,9 +5,13 @@
 @endsection
 
 @section('css')
-<script type="text/javascript">
-    var baseUrl = "{{ asset('/') }}";
-</script>
+    <script type="text/javascript">
+        var baseUrl = "{{ asset('/') }}";
+        var sviSenzori =<?php echo(json_encode($sensors)); ?>;
+
+        console.log(sviSenzori);
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 @endsection
 
 @section('content')
@@ -71,6 +75,9 @@
                                         <label for="tipSenzora1" class="col-form-label" style="font-size: 15px;">Tip senzora:</label>
                                         <select id="tipSenzora1" name="tipSenzora1" class="form-control" onchange="postaviCenuSenzora(1)">
                                             <option value="0" selected>Izaberi iz liste...</option>
+                                            @foreach($sensors as $s)
+                                                <option value="{{ $s->idSenzor }}" data-id="{{ $s->idSenzor }}">{{ $s->naziv }}</option>
+                                            @endforeach
                                         </select>
                                     </div>
                                     <div class="col-4">

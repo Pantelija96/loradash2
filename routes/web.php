@@ -44,5 +44,6 @@ Route::get('/addservice','FrontEndController@addService');
 
 
 Route::group(['prefix'=> '/ajax'], function(){
-  Route::get('/finduser/{userId}','BackEndController@findUser');
+    Route::get('/finduser/{userId}','BackEndController@findUser');
+    Route::get('/getsensordetails/{sensorId}','BackEndController@sensorDetails');
 });
