@@ -59,21 +59,27 @@ function pronadjiKupca() {
         url: baseUrl + 'ajax/finduser/' + sifraKorisnika,
         success: function (data) {
             //console.log(data.response);
+            //console.log(Object.keys(data.response.io3TS1GetAccountDetailsOutputMessage.io3Account).length);
 
-            if (Object.keys(data.response).length == 1) {
-                //samo jedan zapis je dohvacen soap-om
-                var naziv = data.response.io3TS1GetAccountDetailsOutputMessage.io3Account.outAccountName;
-                var pib = data.response.io3TS1GetAccountDetailsOutputMessage.io3Account.outAccountPIB;
-                var mb = data.response.io3TS1GetAccountDetailsOutputMessage.io3Account.outAccountMB;
-
-                document.getElementById('userName').value = naziv;
-                document.getElementById('inputPIB').value = pib;
-                document.getElementById('inputMB').value = mb;
-            } else {
-                //postoji vise zapisa sa soap-a
-                alert("Postoji vise zapisa!");
+            if(data.response.io3TS1GetAccountDetailsOutputMessage.io3Account == null){
+                alert("Nepostojeci ID, probajte da unesete novi!");
             }
+            else {
+                if (Object.keys(data.response.io3TS1GetAccountDetailsOutputMessage.io3Account).length > 1) {
+                    //postoji vise zapisa sa soap-a
+                    alert("Postoji vise zapisa!");
+                    console.log(data.response.io3TS1GetAccountDetailsOutputMessage.io3Account);
+                } else {
+                    //samo jedan zapis je dohvacen soap-om
+                    var naziv = data.response.io3TS1GetAccountDetailsOutputMessage.io3Account.outAccountName;
+                    var pib = data.response.io3TS1GetAccountDetailsOutputMessage.io3Account.outAccountPIB;
+                    var mb = data.response.io3TS1GetAccountDetailsOutputMessage.io3Account.outAccountMB;
 
+                    document.getElementById('userName').value = naziv;
+                    document.getElementById('inputPIB').value = pib;
+                    document.getElementById('inputMB').value = mb;
+                }
+            }
 
         },
         error: function (xhr, status, error) {
