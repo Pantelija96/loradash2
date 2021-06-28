@@ -33,6 +33,11 @@
                     <div class="form-group col-6 mb-0">
                         <input type="text" class="form-control col-12 mb-4 mt-4" placeholder="Unesite šifru korisnika" id="sifraKorisnika" name="sifraKorisnika">
                         <button type="button" onclick="pronadjiKupca()" class="btn btn-danger col-12">PRONAĐI</button>
+
+                        <select id="direkcija" name="direkcija" class="form-control">
+                            <option value="0" selected disabled>Izaberi direkciju</option>
+
+                        </select>
                     </div>
 
 

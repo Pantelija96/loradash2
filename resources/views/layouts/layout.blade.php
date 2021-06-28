@@ -93,6 +93,14 @@
 
 
 
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url('/allsensors') }}">
+                    <i class="fas fa-fw fa-tools"></i>
+                    <span>TEST - Kreiranje CDR fajlova</span></a>
+            </li>
+
+
+
             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">
 

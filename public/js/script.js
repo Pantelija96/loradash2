@@ -67,8 +67,19 @@ function pronadjiKupca() {
             else {
                 if (Object.keys(data.response.io3TS1GetAccountDetailsOutputMessage.io3Account).length > 1) {
                     //postoji vise zapisa sa soap-a
-                    alert("Postoji vise zapisa!");
-                    console.log(data.response.io3TS1GetAccountDetailsOutputMessage.io3Account);
+                    var podaci = data.response.io3TS1GetAccountDetailsOutputMessage.io3Account;
+                    var naziv = podaci[0].outAccountName;
+                    var pib = podaci[0].outAccountPIB;
+                    var mb = podaci[0].outAccountMB;
+                    document.getElementById('userName').value = naziv;
+                    document.getElementById('inputPIB').value = pib;
+                    document.getElementById('inputMB').value = mb;
+                    console.log(podaci);
+                    for(var i = 0; i < podaci.length; i++){
+                        var newOption = new Option(podaci[i].outAccountTeamDivision+' '+podaci[i].outAccountFirstName+' '+podaci[i].outAccountLastName, i, false, false);
+                        $('#direkcija').append(newOption).trigger('change');
+                    }
+                    $("#direkcija").show();
                 } else {
                     //samo jedan zapis je dohvacen soap-om
                     var naziv = data.response.io3TS1GetAccountDetailsOutputMessage.io3Account.outAccountName;
@@ -90,6 +101,9 @@ function pronadjiKupca() {
         }
     });
 }
+/*Posotji vise korisnika SKRIVANJE*/
+$("#direkcija").hide();
+
 
 function postaviCenuSenzora(id) {
     var data = $('#tipSenzora' + id + ' :selected').attr("data-id");
@@ -127,10 +141,18 @@ $(document).ready(function() {
     $('.js-example-basic-multiple').select2({
         placeholder: 'Izaberite mesece'
     });
+
+    $('.js-example-basic').select2({
+        placeholder: 'Izaberi direkciju'
+    });
 });
 function refreshSelects() {
     $('.js-example-basic-multiple').select2({
         placeholder: 'Izaberite mesece'
+    });
+
+    $('.js-example-basic').select2({
+        placeholder: 'Izaberi direkciju'
     });
 }
 

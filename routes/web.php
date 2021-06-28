@@ -40,6 +40,8 @@ Route::post('/addsensor','BackEndController@addSensor')->name('addSensor');
 
 Route::get('/addservice','FrontEndController@addService');
 
+Route::get('/cdr','BackEndController@cdr');
+
 
 
 
