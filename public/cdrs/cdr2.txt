@@ -1,0 +1,5 @@
+28-6-2021 23:47:22|Pantelija Stosic|2|naziv firme direkcije 2|1|Senzor1|20|?
+28-6-2021 23:47:22|Pantelija Stosic|2|naziv firme direkcije 2|2|Senzor2|20|?
+
+
+Daum kreiranja CDR-a?

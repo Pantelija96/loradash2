@@ -19,5 +19,7 @@ class CDR extends Model
     private $kolicinaSenzora;
     private $ukupnaCenaSenzora;
 
-    public function
+    public function getCdrData(){
+
+    }
 }

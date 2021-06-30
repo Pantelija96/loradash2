@@ -1,0 +1,3 @@
+28-6-2021 23:47:22|Pantelija Stosic|1|naziv firme direkcije 1|1|Senzor1|15|?
+
+? = 15*(sve cene senzora)
