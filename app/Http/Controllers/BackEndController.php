@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\UslugaSenzor;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Sensor;
+use App\Models\Usluga;
 
 use SoapClient;
 use SoapHeader;
@@ -60,9 +62,32 @@ class BackEndController extends Controller
         return redirect('/allusers');
     }
 
-    public function addSensor(Request $requrest)
+    public function addSensor(Request $request)
     {
-        return dd($requrest->all());
+        $senzor = new Sensor();
+
+        $senzor->idKorisnikSistema = $request->session()->get('korisnik')->idKorisnikSistema;
+        $senzor->naziv = $request->get('nazivSenzora');
+        $senzor->opis = $request->get('opisSenzora');
+        $senzor->komadaNaLageru = $request->get('komadaNaLageru');
+        $senzor->nabavnaCena = $request->get('nabavnaCena');
+        $senzor->prodajnaCena = $request->get('prodajnaCena');
+        $senzor->cenaSenzoraGR = $request->get('cenaSenzoraGR');
+        $senzor->cenaSenzoraVanGR = $request->get('cenaSenzoraVanGR');
+        $senzor->cenaAppVanGR = $request->get('cenaSenzoraVanGR');
+        $senzor->cenaAppGR = $request->get('cenaAppGR');
+        $senzor->cenaAppVanGR = $request->get('cenaAppVanGR');
+        $senzor->cenaServisaAktivan = $request->get('cenaServisaAktivan');
+        $senzor->cenaServisaNeaktivan = $request->get('cenaServisaNeaktivan');
+        $senzor->tehnickaPodrska = $request->get('cenaTehnickePodrske');
+        $senzor->idKategorija = 1;
+
+        if($senzor->insertSenzor()){
+            return redirect('/allsensors');
+        }
+        else{
+            return redirect()->back();
+        }
     }
 
     public function findUser($userId)
@@ -128,5 +153,83 @@ class BackEndController extends Controller
             'response' => Sensor::getOne($sensorId)[0]
         ];
         return ($obj);
+    }
+
+    public function addService(Request $request){
+        $usluga = new Usluga();
+        $usluga->idKorisnikSistema = $request->session()->get('korisnik')->idKorisnikSistema;
+        $usluga->pib = $request->get('PIB');
+        $usluga->mb = $request->get('MB');
+        $usluga->nazivFirmeDirekcije = $request->get('userName')." ".$request->get('direkcija');
+        $usluga->naziv = $request->get('nazivUsluge');
+        $usluga->jednokratnaCena = $request->get('jednokratnaCenaFinal');
+        $usluga->placenaJednokratnaCena = false;
+        $usluga->placeniUredjajiJednokratno = $request->get('opremaJednokratno') === "on";
+        $usluga->placenaAppJednokratno = $request->get('aplikacijaJednokratno') === "on";
+        $usluga->ugovornaObaveza = intval($request->get('brojMeseciUgovora'));
+        $usluga->probniPeriod = $request->get('probniPeriod') === "1";
+        $usluga->probniPeriodMeseci = intval($request->get('brojTrialMeseci'));
+        $usluga->probniPeriodDana = intval($request->get('brojTrialDana'));
+        $usluga->datumPotpisaUgovora = date('Y-m-d H:i:s');
+        $usluga->datumPocetkaNaplate = date('Y-m-d H:i:s',strtotime($request->get('istekProbnogPerioda')));
+        $usluga->datumKrajNaplate = date('Y-m-d H:i:s',strtotime($request->get('istekProbnogPerioda')."+".$usluga->ugovornaObaveza." months"));
+        $usluga->datumAktivacijeSenzora = date('Y-m-d H:i:s',strtotime($request->get('istekProbnogPerioda')));
+        $usluga->garantniRok = intval($request->get('brojMeseciGr'));
+        $usluga->istekaoGarantniRok = false;
+
+        //return dd($request->all());
+
+        $idUsluga = $usluga->insertId();
+
+        $redoviZaUnos = explode(',',$request->get('idRowZaUnos'));
+
+        //return dd($redoviZaUnos);
+        if($idUsluga != 0){
+            //uspenan unos u tabelu usluga
+            $uspesanUnosUslugaSenzor = true;
+            for($i=0; $i < count($redoviZaUnos); $i++ ){
+                //unos novih senzor->uslluga zapisa
+                $idReda = $redoviZaUnos[$i]; //id reda za dohvatanje
+                $uslugaSenzor = new UslugaSenzor();
+                $uslugaSenzor->idUsluga = $idUsluga;
+                $uslugaSenzor->idSenzor = $request->get('tipSenzora'.$idReda);
+                $uslugaSenzor->nabavnaCena = $request->get('nabavnaCena'.$idReda);
+                $uslugaSenzor->cenaSenzoraGR = $request->get('cenaSenzoraUGr'.$idReda);
+                $uslugaSenzor->cenaSenzoraVanGR = $request->get('cenaSenzoraVanGr'.$idReda);
+                $uslugaSenzor->cenaAppGR = $request->get('cenaLicenceUGr'.$idReda);
+                $uslugaSenzor->cenaAppVanGR = $request->get('cenaLicenceVanGr'.$idReda);
+                $uslugaSenzor->cenaServisaAktivnih = $request->get('cenaServisaZaAktivne'.$idReda);
+                $uslugaSenzor->cenaServisaNeaktivnih = $request->get('cenaServisaZaNeaktivne'.$idReda);
+                $uslugaSenzor->cenaTehnickePodrske = $request->get('cenaTehnickePodrske'.$idReda);
+                $uslugaSenzor->brojAktivnihSenzora = $request->get('brojAktivnih'.$idReda);
+                $uslugaSenzor->brojPovremenoNeaktivnih = $request->get('brojNeaktivnih'.$idReda);
+                $uslugaSenzor->ukupanBrojSenzora = $uslugaSenzor->brojAktivnihSenzora + $uslugaSenzor->brojPovremenoNeaktivnih;
+                $uslugaSenzor->brojNeaktivnihMeseci = count($request->get('neaktivniMeseci'.$idReda));
+                $nizNeaktivnihMeseci = implode('|',$request->get('neaktivniMeseci'.$idReda));
+                $uslugaSenzor->neaktivniMeseci = $nizNeaktivnihMeseci;
+                //smanjivanje broja na lageru
+                Sensor::smanjiLager($uslugaSenzor->idSenzor, $uslugaSenzor->ukupanBrojSenzora);
+
+                $insertUslugaSenzor = $uslugaSenzor->insert();
+
+                if($insertUslugaSenzor != 1){
+                    $uspesanUnosUslugaSenzor = false;
+                }
+            }
+
+            if($uspesanUnosUslugaSenzor){
+                //uspesan unos UslugSenzor
+                return redirect('/home');
+            }
+            else{
+                //neuspesn unos uslugaSenzor
+                return redirect()->back();
+            }
+        }
+        else {
+            //desila se greska pri unosu u tabelu usluga
+            return redirect()->back();
+        }
+        return redirect()->back();
     }
 }

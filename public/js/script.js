@@ -76,7 +76,7 @@ function pronadjiKupca() {
                     document.getElementById('inputMB').value = mb;
                     console.log(podaci);
                     for(var i = 0; i < podaci.length; i++){
-                        var newOption = new Option(podaci[i].outAccountTeamDivision+' '+podaci[i].outAccountFirstName+' '+podaci[i].outAccountLastName, i, false, false);
+                        var newOption = new Option(podaci[i].outAccountTeamDivision+' '+podaci[i].outAccountFirstName+' '+podaci[i].outAccountLastName,podaci[i].outAccountTeamDivision+' '+podaci[i].outAccountFirstName+' '+podaci[i].outAccountLastName , false, false);
                         $('#direkcija').append(newOption).trigger('change');
                     }
                     $("#direkcija").show();
@@ -107,18 +107,22 @@ $("#direkcija").hide();
 
 function postaviCenuSenzora(id) {
     var data = $('#tipSenzora' + id + ' :selected').attr("data-id");
-    alert(data);
-    //napraviti ajax zahtev ybog mogucih izmena lagera
+    //alert(data);
+    //napraviti ajax zahtev zbog mogucih izmena lagera
     $.ajax({
         type: 'GET',
         url: baseUrl + 'ajax/getsensordetails/' + data,
         success: function (data) {
             console.log(data);
             document.getElementById("cenaSenzoraUGr" + id).value = parseInt(data.response.cenaSenzoraGR);
+            document.getElementById("staraCenaSenzoraUGr" + id).value = parseInt(data.response.cenaSenzoraGR);
             document.getElementById("cenaLicenceUGr" + id).value = parseInt(data.response.cenaAppGR);
+            document.getElementById("staraCenaLicenceUGr" + id).value = parseInt(data.response.cenaAppGR);
             document.getElementById("cenaServisaZaAktivne" + id).value = parseInt(data.response.cenaServisaAktivan);
             document.getElementById("cenaSenzoraVanGr" + id).value = parseInt(data.response.cenaSenzoraVanGR);
+            document.getElementById("staraCenaSenzoraVanGr" + id).value = parseInt(data.response.cenaSenzoraVanGR);
             document.getElementById("cenaLicenceVanGr" + id).value = parseInt(data.response.cenaAppVanGR);
+            document.getElementById("staraCenaLicenceVanGr" + id).value = parseInt(data.response.cenaAppVanGR);
             document.getElementById("cenaServisaZaNeaktivne" + id).value = parseInt(data.response.cenaServisaNeaktivan);
             document.getElementById("komadaNaLageru" + id).value = parseInt(data.response.komadaNaLageru);
             document.getElementById("komadaNaLageru" + id).setAttribute("data-number", parseInt(data.response.komadaNaLageru));
@@ -156,12 +160,16 @@ function refreshSelects() {
     });
 }
 
+var nizSenzora = [1];
 
 var ukupnoRedova = 1;
 var brojReda = 2;
 
 function addToForm() {
-
+    var textZaSenzore = '';
+    for(var i=0; i<sviSenzori.length; i++){
+        textZaSenzore+='<option value="'+sviSenzori[i].idSenzor+'" data-id="'+sviSenzori[i].idSenzor+'">'+sviSenzori[i].naziv+'</option>';
+    }
     var htmlReda2 = `
   <div class="card shadow mb-3">
     <div id="formRow` + brojReda + `"  class="row">
@@ -169,7 +177,7 @@ function addToForm() {
             <label for="tipSenzora` + brojReda + `" class="col-form-label" style="font-size: 15px;">Tip senzora:</label>
             <select id="tipSenzora` + brojReda + `" name="tipSenzora` + brojReda + `" class="form-control" onchange="postaviCenuSenzora(` + brojReda + `)">
             <option value="0" selected>Izaberi iz liste...</option>
-
+                `+textZaSenzore+`
           </select>
         </div>
         <div class="col-4">
@@ -184,10 +192,12 @@ function addToForm() {
         <div class="col-4">
             <label for="cenaSenzoraUGr` + brojReda + `" class="col-form-label" style="font-size: 15px;">Cena senzora u GR:</label>
             <input type="number" min="0" value="0" class="form-control" id="cenaSenzoraUGr` + brojReda + `" name="cenaSenzoraUGr` + brojReda + `" onchange="izracunajCenu(` + brojReda + `)">
+            <input type="hidden" id="staraCenaSenzoraUGr` + brojReda + `" name="staraCenaSenzoraUGr` + brojReda + `">
         </div>
         <div class="col-4">
             <label for="cenaLicenceUGr` + brojReda + `" class="col-form-label" style="font-size: 15px;">Cena licence u GR:</label>
             <input type="number" min="0" value="0" class="form-control" id="cenaLicenceUGr` + brojReda + `" name="cenaLicenceUGr` + brojReda + `" onchange="izracunajCenu(` + brojReda + `)">
+            <input type="hidden" id="staraCenaLicenceUGr` + brojReda + `" name="staraCenaLicenceUGr` + brojReda + `">
         </div>
         <div class="col-4">
             <label for="cenaServisaZaAktivne` + brojReda + `" class="col-form-label" style="font-size: 15px;">Cena servisa za aktivne:</label>
@@ -197,10 +207,12 @@ function addToForm() {
         <div class="col-4">
             <label for="cenaSenzoraVanGr` + brojReda + `" class="col-form-label" style="font-size: 15px;">Cena senzora <strong>van</strong> GR:</label>
             <input type="number" min="0" value="0" class="form-control" id="cenaSenzoraVanGr` + brojReda + `" name="cenaSenzoraVanGr` + brojReda + `" onchange="izracunajCenu(` + brojReda + `)">
+            <input type="hidden" id="staraCenaSenzoraVanGr` + brojReda + `" name="staraCenaSenzoraVanGr` + brojReda + `">
         </div>
         <div class="col-4">
             <label for="cenaLicenceVanGr` + brojReda + `" class="col-form-label" style="font-size: 15px;">Cena licence <strong>van</strong> GR:</label>
             <input type="number" min="0" value="0" class="form-control" id="cenaLicenceVanGr` + brojReda + `" name="cenaLicenceVanGr` + brojReda + `" onchange="izracunajCenu(` + brojReda + `)">
+            <input type="hidden" id="staraCenaLicenceVanGr` + brojReda + `" name="staraCenaLicenceVanGr` + brojReda + `">
         </div>
         <div class="col-4">
             <label for="cenaServisaZaNeaktivne` + brojReda + `" class="col-form-label" style="font-size: 15px;">Cena servisa za neaktivne:</label>
@@ -249,7 +261,9 @@ function addToForm() {
   `;
     ukupnoRedova++;
     brojReda++;
+    nizSenzora.push(ukupnoRedova);
     document.getElementById('brojSenzora').value = ukupnoRedova;
+    document.getElementById('idRowZaUnos').value = nizSenzora;
     $("#proba").append(htmlReda2);
     refreshSelects();
 }
@@ -258,7 +272,13 @@ function removeFromForm(idRow) {
     var elementId = "formRow" + idRow;
     $("#" + elementId).parent().remove();
     ukupnoRedova--;
+    brojReda--;
+    const index = nizSenzora.indexOf(idRow);
+    if (index > -1) {
+        nizSenzora.splice(index, 1);
+    }
     document.getElementById('brojSenzora').value = ukupnoRedova;
+    document.getElementById('idRowZaUnos').value = nizSenzora;
 }
 
 function promenaProbnogPerioda() {
@@ -379,7 +399,7 @@ function checkPasswords() {
     }
 }
 
-/*LETO ZIMA SKRIVANJE*/
+/* PROBNI PERIOD */
 $("#probniPeriodCard").hide();
 $(function () {
     $("#odobriProbniPeriod").click(function () {
@@ -402,23 +422,33 @@ $(function () {
         var ukupnaCenaOpreme = 0;
         var ugovornaObaveza = parseInt(document.getElementById('brojMeseciUgovora').value);
         var garantniRok = parseInt(document.getElementById('brojMeseciGr').value);
-        //  if($('#opremaJednokratno:checked').length > 0){
         for (var i = 0; i < brojRedova; i++) {
             var cenaGR = parseInt(document.getElementById('cenaSenzoraUGr' + (i + 1)).value);
             var cenaVanGR = parseInt(document.getElementById('cenaSenzoraVanGr' + (i + 1)).value);
             var aktivni = parseInt(document.getElementById('brojAktivnih' + (i + 1)).value);
             var neaktivni = parseInt(document.getElementById('brojNeaktivnih' + (i + 1)).value);
+            if(cenaGR === 0){
+                //cenaGR = parseInt(document.getElementById('staraCenaSenzoraUGr' + (i + 1)).value);
+                document.getElementById('cenaSenzoraUGr' + (i + 1)).value = document.getElementById('staraCenaSenzoraUGr' + (i + 1)).value;
+            }
+            else{
+                document.getElementById('cenaSenzoraUGr' + (i + 1)).value = 0;
+            }
+            if(cenaVanGR === 0){
+                //cenaVanGR = parseInt(document.getElementById('staraCenaSenzoraVanGr' + (i + 1)).value);
+                document.getElementById('cenaSenzoraVanGr' + (i + 1)).value = document.getElementById('staraCenaSenzoraVanGr' + (i + 1)).value;
+            }
+            else{
+                document.getElementById('cenaSenzoraVanGr' + (i + 1)).value = 0;
+            }
             var ukupnaCenaOpremeGR = garantniRok * cenaGR * (aktivni + neaktivni);
             var ukupnaCenaOpremeVanGR = (ugovornaObaveza - garantniRok) * cenaVanGR * (aktivni + neaktivni);
-
             ukupnaCenaOpreme += ukupnaCenaOpremeGR + ukupnaCenaOpremeVanGR;
-            document.getElementById('cenaSenzoraUGr' + (i + 1)).value = 0;
-            document.getElementById('cenaSenzoraVanGr' + (i + 1)).value = 0;
         }
         //alert("Ukupna cena opreme:"+ukupnaCenaOpreme);
         ukupnaCenaOpremeFinal = ukupnaCenaOpreme;
         izracunajJednokratnuCenu();
-        opremaJednokratnoPlacanje = !opremaJednokratnoPlacanje;
+        //opremaJednokratnoPlacanje = !opremaJednokratnoPlacanje;
         izracunajCenu();
         //}
     });
@@ -427,6 +457,7 @@ $(function () {
 var ukupnaCenaAplikacijeFinal = 0;
 $(function () {
     $("#aplikacijaJednokratno").click(function () {
+        //debugger;
         var brojRedova = ukupnoRedova;
         var ukupnaCenaAplikacije = 0;
         var ugovornaObaveza = parseInt(document.getElementById('brojMeseciUgovora').value);
@@ -438,20 +469,32 @@ $(function () {
             var neaktivni = parseInt(document.getElementById('brojNeaktivnih' + (i + 1)).value);
             var ukupnaCenaOpremeGR = garantniRok * cenaGR * (aktivni + neaktivni);
             var ukupnaCenaOpremeVanGR = (ugovornaObaveza - garantniRok) * cenaVanGR * (aktivni + neaktivni);
-
+            if(cenaGR === 0){
+                //cenaGR = parseInt(document.getElementById('staraCenaSenzoraUGr' + (i + 1)).value);
+                //console.log(document.getElementById('staraCenaLicenceUGr' + (i + 1)).value);
+                document.getElementById('cenaLicenceUGr' + (i + 1)).value = document.getElementById('staraCenaLicenceUGr' + (i + 1)).value;
+            }
+            else{
+                document.getElementById('cenaLicenceUGr' + (i + 1)).value = 0;
+            }
+            if(cenaVanGR === 0){
+                //cenaVanGR = parseInt(document.getElementById('staraCenaSenzoraVanGr' + (i + 1)).value);
+                document.getElementById('cenaLicenceVanGr' + (i + 1)).value = document.getElementById('staraCenaLicenceVanGr' + (i + 1)).value;
+            }
+            else{
+                document.getElementById('cenaLicenceVanGr' + (i + 1)).value = 0;
+            }
             ukupnaCenaAplikacije += ukupnaCenaOpremeGR + ukupnaCenaOpremeVanGR;
-            document.getElementById('cenaLicenceUGr' + (i + 1)).value = 0;
-            document.getElementById('cenaLicenceVanGr' + (i + 1)).value = 0;
         }
         ukupnaCenaAplikacijeFinal = ukupnaCenaAplikacije;
         izracunajJednokratnuCenu();
-        aplikacijaJednokratnoPlacanje = !aplikacijaJednokratnoPlacanje;
-        izracunajCenu()
+        //aplikacijaJednokratnoPlacanje = !aplikacijaJednokratnoPlacanje;
+        izracunajCenu();
     });
 });
 
 function izracunajJednokratnuCenu() {
-
+    console.log("Iz jed cenu");
     var trenutnaJeddnkratnaCena = parseInt(document.getElementById('jednokratnaCena').value);
     var jedCena = parseInt(ukupnaCenaOpremeFinal) + parseInt(ukupnaCenaAplikacijeFinal) + parseInt(document.getElementById('jednokratnaCena').value);
     document.getElementById('jednokratnaCenaFinal').value = jedCena;

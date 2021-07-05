@@ -16,15 +16,13 @@
 
 <!-- Content Row -->
 <div class="row">
-
-
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="card border-left-danger shadow h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Broj korisnika</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">120</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $brojKupaca }}</div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-users fa-2x text-gray-300"></i>
@@ -34,15 +32,13 @@
         </div>
     </div>
 
-
-
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="card border-left-danger shadow h-100 py-2">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Broj senzora</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">3598</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $brojSenzora }}</div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-circle fa-2x text-gray-300"></i>
@@ -52,8 +48,6 @@
         </div>
     </div>
 
-
-
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="card border-left-danger shadow h-100 py-2">
             <div class="card-body">
@@ -61,7 +55,7 @@
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Aktivni senzori
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">38</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $brojAktivnihSenzora[0]->brojAktivnihSenzora }}</div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-users fa-2x text-gray-300"></i>
@@ -76,8 +70,8 @@
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Neaktivni senzori</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">18</div>
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Broj aktivnih usluga</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $brojAktivnihServisa[0]->brojAktivnihUsluga }}</div>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-circle fa-2x text-gray-300"></i>
@@ -110,7 +104,7 @@
                         <thead>
                             <tr>
                                 <th>Naziv korisnika</th>
-                                <th>Broj senzora</th>
+                                <th>PIB</th>
                                 <th>Datum registracije</th>
                                 <th>Trajanje ugovora</th>
                             </tr>
@@ -118,193 +112,20 @@
                         <tfoot>
                             <tr>
                                 <th>Naziv korisnika</th>
-                                <th>Broj senzora</th>
+                                <th>PIB</th>
                                 <th>Datum registracije</th>
                                 <th>Trajanje ugovora</th>
                             </tr>
                         </tfoot>
                         <tbody>
-                            <tr>
-                                <td>Teri test 1</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>142</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
-                            <tr>
-                                <td>Teri test</td>
-                                <td>135</td>
-                                <td>21.12.2018.</td>
-                                <td>21.12.2019.</td>
-                            </tr>
+                            @foreach($usluge as $u)
+                                <tr>
+                                    <th>{{ $u->nazivFirmeDirekcije }}</th>
+                                    <th>{{ $u->pib }}</th>
+                                    <th>{{ date("d.m.y",strtotime($u->datumPotpisaUgovora)) }}</th>
+                                    <th>{{ $u->ugovornaObaveza }}</th>
+                                </tr>
+                            @endforeach
                         </tbody>
                     </table>
                 </div>

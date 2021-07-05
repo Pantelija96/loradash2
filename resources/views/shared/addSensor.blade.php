@@ -98,6 +98,13 @@
                     </div>
                 </div>
 
+                <div class="form-group row">
+                    <label for="cenaTehnickePodrske" class="col-sm-2 col-form-label">Komada na lageru</label>
+                    <div class="col-sm-10">
+                        <input type="number" min="0" step="1" class="form-control" id="komadaNaLageru" name="komadaNaLageru">
+                    </div>
+                </div>
+
                 <!--  <div class="form-group row">
               <label for="kategorija" class="col-sm-2 col-form-label">Kategorija</label>
               <div class="col-sm-10">

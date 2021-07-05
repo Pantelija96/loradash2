@@ -24,7 +24,8 @@
 <div class="card shadow mb-12">
     <div class="card-body">
 
-        <form action="#" method="POST">
+        <form action="{{ route('addService') }}" method="POST">
+            {{ csrf_field() }}
             <div class="card shadow mb-3">
                 <div class="card-header text-danger font-weight-bold">
                     Korisnik
@@ -97,10 +98,12 @@
                                     <div class="col-4">
                                         <label for="cenaSenzoraUGr1" class="col-form-label" style="font-size: 15px;">Cena senzora u GR:</label>
                                         <input type="number" min="0" value="0" class="form-control" id="cenaSenzoraUGr1" name="cenaSenzoraUGr1" onchange="izracunajCenu()">
+                                        <input type="hidden" id="staraCenaSenzoraUGr1" name="staraCenaSenzoraUGr1">
                                     </div>
                                     <div class="col-4">
                                         <label for="cenaLicenceUGr1" class="col-form-label" style="font-size: 15px;">Cena licence u GR:</label>
                                         <input type="number" min="0" value="0" class="form-control" id="cenaLicenceUGr1" name="cenaLicenceUGr1" onchange="izracunajCenu()">
+                                        <input type="hidden" id="staraCenaLicenceUGr1" name="staraCenaLicenceUGr1">
                                     </div>
                                     <div class="col-4">
                                         <label for="cenaServisaZaAktivne1" class="col-form-label" style="font-size: 15px;">Cena servisa za aktivne:</label>
@@ -110,10 +113,12 @@
                                     <div class="col-4">
                                         <label for="cenaSenzoraVanGr1" class="col-form-label" style="font-size: 15px;">Cena senzora <strong>van</strong> GR:</label>
                                         <input type="number" min="0" value="0" class="form-control" id="cenaSenzoraVanGr1" name="cenaSenzoraVanGr1" onchange="izracunajCenu()">
+                                        <input type="hidden" id="staraCenaSenzoraVanGr1" name="staraCenaSenzoraVanGr1">
                                     </div>
                                     <div class="col-4">
                                         <label for="cenaLicenceVanGr1" class="col-form-label" style="font-size: 15px;">Cena licence <strong>van</strong> GR:</label>
                                         <input type="number" min="0" value="0" class="form-control" id="cenaLicenceVanGr1" name="cenaLicenceVanGr1" onchange="izracunajCenu()">
+                                        <input type="hidden" id="staraCenaLicenceVanGr1" name="staraCenaLicenceVanGr1">
                                     </div>
                                     <div class="col-4">
                                         <label for="cenaServisaZaNeaktivne1" class="col-form-label" style="font-size: 15px;">Cena servisa za neaktivne:</label>
@@ -186,6 +191,7 @@
                             </div> -->
                         </div>
                         <input type="hidden" id="brojSenzora" name="brojSenzora" value="1" />
+                        <input type="hidden" id="idRowZaUnos" name="idRowZaUnos" value="1" />
                         <div class="col" style="text-align: right;">
                             <div onclick="addToForm()" style=" color: #e74a3b; cursor: pointer;">Dodaj senzor: <i class="fas fa-lg fa-plus-circle"></i></div>
                         </div>
@@ -316,6 +322,7 @@
                         <button type="submit" value="true" name="inputSubmit" class="btn btn-danger float-right">Dodaj uslugu korisniku</button>
                     </div>
                 </div>
+
         </form>
     </div>
 
