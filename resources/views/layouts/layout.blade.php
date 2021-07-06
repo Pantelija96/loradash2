@@ -94,7 +94,7 @@
 
 
             <li class="nav-item">
-                <a class="nav-link" href="{{ url('/allsensors') }}">
+                <a class="nav-link" href="{{ url('/cdr') }}">
                     <i class="fas fa-fw fa-tools"></i>
                     <span>TEST - Kreiranje CDR fajlova</span></a>
             </li>

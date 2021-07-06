@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Sensor;
 use App\Models\Usluga;
 
+use Illuminate\Support\Facades\Storage;
 use SoapClient;
 use SoapHeader;
 
@@ -156,6 +157,7 @@ class BackEndController extends Controller
     }
 
     public function addService(Request $request){
+        //return dd($request->all());
         $usluga = new Usluga();
         $usluga->idKorisnikSistema = $request->session()->get('korisnik')->idKorisnikSistema;
         $usluga->pib = $request->get('PIB');
@@ -193,7 +195,7 @@ class BackEndController extends Controller
                 $uslugaSenzor = new UslugaSenzor();
                 $uslugaSenzor->idUsluga = $idUsluga;
                 $uslugaSenzor->idSenzor = $request->get('tipSenzora'.$idReda);
-                $uslugaSenzor->nabavnaCena = $request->get('nabavnaCena'.$idReda);
+                $uslugaSenzor->nabavnaCena = intval($request->get('nabavnaCena'.$idReda));
                 $uslugaSenzor->cenaSenzoraGR = $request->get('cenaSenzoraUGr'.$idReda);
                 $uslugaSenzor->cenaSenzoraVanGR = $request->get('cenaSenzoraVanGr'.$idReda);
                 $uslugaSenzor->cenaAppGR = $request->get('cenaLicenceUGr'.$idReda);
@@ -204,9 +206,11 @@ class BackEndController extends Controller
                 $uslugaSenzor->brojAktivnihSenzora = $request->get('brojAktivnih'.$idReda);
                 $uslugaSenzor->brojPovremenoNeaktivnih = $request->get('brojNeaktivnih'.$idReda);
                 $uslugaSenzor->ukupanBrojSenzora = $uslugaSenzor->brojAktivnihSenzora + $uslugaSenzor->brojPovremenoNeaktivnih;
-                $uslugaSenzor->brojNeaktivnihMeseci = count($request->get('neaktivniMeseci'.$idReda));
-                $nizNeaktivnihMeseci = implode('|',$request->get('neaktivniMeseci'.$idReda));
+                $uslugaSenzor->brojNeaktivnihMeseci = $request->get('brojNeaktivnih'.$idReda);
+                $nizNeaktivnihMeseci = (intval($request->get('brojNeaktivnih'.$idReda)) == 0) ? '' : implode('|',$request->get('neaktivniMeseci'.$idReda));
                 $uslugaSenzor->neaktivniMeseci = $nizNeaktivnihMeseci;
+                //return dd($uslugaSenzor);
+
                 //smanjivanje broja na lageru
                 Sensor::smanjiLager($uslugaSenzor->idSenzor, $uslugaSenzor->ukupanBrojSenzora);
 
@@ -216,6 +220,8 @@ class BackEndController extends Controller
                     $uspesanUnosUslugaSenzor = false;
                 }
             }
+
+            //return dd($usluga);
 
             if($uspesanUnosUslugaSenzor){
                 //uspesan unos UslugSenzor
@@ -231,5 +237,94 @@ class BackEndController extends Controller
             return redirect()->back();
         }
         return redirect()->back();
+    }
+
+    public function cdr(){
+        //kreiranje cdr-ova
+        //prvo dohvatiti sve aktivne usluge
+        $data = [];
+        $sveAktivneUsluge = Usluga::getAllActive();
+        //return dd($sveAktivneUsluge);
+        //za svaku aktivnu uslugu dohvatiti sve senzore i podatke o kupcu
+        //aktivna usluga
+        //---->senzori za tu uslugu
+        //----> podaci o KAM-u za uslugu
+        for($i=0; $i<count($sveAktivneUsluge); $i++){
+            $dataLocal = [];
+            $dataLocal["usluga"] = $sveAktivneUsluge[$i];
+            $dataLocal["sviSenzoriZaUslugu"] = UslugaSenzor::getAllForService($sveAktivneUsluge[$i]->idUsluga); //dohvatanje iz usluga senzor tabele -> nema podataka o senzoru => naziv, opis
+            $dataLocal["podaciKam"] = User::getOne($sveAktivneUsluge[$i]->idKorisnikSistema)[0];
+            array_push($data, $dataLocal);
+        }
+
+        //za svaku uslugu se pravi novi red, ako postoji vise senzora u usluzi dodaje se novi red
+
+        $text = "";
+
+        //return dd($data);
+
+        foreach ($data as $d){
+            $usluga = $d['usluga'];
+            $kam = $d["podaciKam"];
+            foreach ($d['sviSenzoriZaUslugu'] as $senzor){
+                $cena = 0;
+                //treba proveriti da li je placena jednokratna cena + update placanja jednokratne cene
+                if($usluga->placenaJednokratnaCena == 0){
+                    //nije placena jednokratna cena
+                    $cena += $usluga->jednokratnaCena;
+                    //update => placena jednokratna cena ili na kraju meseca napraviti cron???
+                    //Usluga::updatePlacenaJednokratnaCena($usluga->idUsluga, 1);
+                }
+                //treba proveriti da li su svi meseci aktivni + koji je broj senzora za aktivne, koji za neaktivne
+                if($senzor->brojNeaktivnihMeseci > 0){
+                    //postoje neaktivni meseci -> proveriti da li je sada jedan od tih neaktivnih
+                    $nizNeaktivnihMeseci = explode('|',$senzor->neaktivniMeseci);
+                    $trenutniMesec = date('m');
+                    if(in_array($trenutniMesec,$nizNeaktivnihMeseci)){
+                        //trenutno je neaktivni mesec
+                        $cena += $senzor->brojAktivnihSenzora * $senzor->cenaServisaAktivnih;
+                        $cena += $senzor->brojPovremenoNeaktivnih * $senzor->cenaServisaNeaktivnih;
+                    }
+                    else{
+                        //nije jedan od neaktivnih meseci
+                        $cena += $senzor->ukupanBrojSenzora * $senzor->cenaServisaAktivnih;
+                    }
+                }
+                else{
+                    //svi meseci su aktivni
+                    $cena += $senzor->ukupanBrojSenzora * $senzor->cenaServisaAktivnih;
+                }
+
+                //treba proveriti garantni rok
+                if($usluga->istekaoGarantniRok == 0){
+                    if($usluga->ugovornaObaveza != $usluga->garantniRok){
+                        $timestampIstekaGR = strtotime("+".$usluga->garantniRok." months", strtotime($usluga->datumPotpisaUgovora));
+                        if( (date("Y")==date("Y",$timestampIstekaGR)) && (date("m")==date("m",$timestampIstekaGR)) ){
+                            Usluga::updateGR($usluga->idUsluga, 1);
+                        }
+                        $cena += $senzor->ukupanBrojSenzora * ($senzor->cenaSenzoraGR + $senzor->cenaAppGR + $senzor->cenaTehnickePodrske);
+                    }
+                    else{
+                        $cena += $senzor->ukupanBrojSenzora * ($senzor->cenaSenzoraGR + $senzor->cenaAppGR + $senzor->cenaTehnickePodrske);
+                    }
+                }
+                else{
+                    $cena += $senzor->ukupanBrojSenzora * ($senzor->cenaSenzoraVanGR + $senzor->cenaAppVanGR + $senzor->cenaTehnickePodrske);
+                }
+
+                //treba proveriti da li je istekao probni period  -> da li se uopste pravi cdr za slucaj da nije istekao probni period? -> datumPocetakNaplate
+
+                //$cena = $senzor->ukupanBrojSenzora * ($senzor->nabavnaCena + $senzor->cenaSenzoraGR + $senzor->cenaAppGR + $senzor->cenaServisaAktivnih + $senzor->cenaTehnickePodrske);
+                $text.="".date("d.m.Y",strtotime($usluga->datumPotpisaUgovora))."|".$kam->ime." ".$kam->prezime."|".$usluga->pib."|".$usluga->nazivFirmeDirekcije."|".$senzor->idSenzor."|".$cena."\n";
+            }
+        }
+
+        if (Storage::exists('cdr.txt')) {
+            Storage::delete('cdr.txt');
+        }
+
+        Storage::disk('public')->put('cdr.txt', $text);
+
+        return redirect('/home');
     }
 }

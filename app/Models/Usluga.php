@@ -86,4 +86,36 @@ class Usluga extends Model
             \Log::error('Greska pri brojanju ukupnog broja usluga, greska: ' . $e->getMessage());
         }
     }
+
+    public static function getAllActive(){
+        try {
+            return DB::select("SELECT * FROM usluga WHERE NOW() >= `datumPotpisaUgovora` AND NOW() <= `datumKrajNaplate`");
+        } catch (\Exception $e) {
+            \Log::error('Greska pri brojanju ukupnog broja usluga, greska: ' . $e->getMessage());
+        }
+    }
+
+    public static function updateGR($id,$value){
+        try {
+            return DB::table('usluga')
+                ->where('idUsluga', '=', $id)
+                ->update([
+                    'istekaoGarantniRok' => $value
+                ]);
+        } catch (\Exception $e) {
+            \Log::error('Greska pri update isticanja garantnog roka, greska: ' . $e->getMessage());
+        }
+    }
+
+    public static function updatePlacenaJednokratnaCena($id,$value){
+        try {
+            return DB::table('usluga')
+                ->where('idUsluga', '=', $id)
+                ->update([
+                    'placenaJednokratnaCena' => $value
+                ]);
+        } catch (\Exception $e) {
+            \Log::error('Greska pri update placanja jednokratne cene, greska: ' . $e->getMessage());
+        }
+    }
 }

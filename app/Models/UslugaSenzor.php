@@ -57,4 +57,14 @@ class UslugaSenzor extends Model
             \Log::error('Greska pri insertu Usluga Senzor, greska: '.$e->getMessage());
         }
     }
+
+    public static function getAllForService($id){
+        try {
+            return DB::table('uslugasenzor')
+                ->where('idUsluga','=',$id)
+                ->get();
+        } catch (\Exception $e) {
+            \Log::error('Greska pri dohvatanju usluga-senzor po id usluge, greska: ' . $e->getMessage());
+        }
+    }
 }

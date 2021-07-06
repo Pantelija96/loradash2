@@ -36,6 +36,18 @@ class User extends Model
       }
     }
 
+    public static function getOne($id){
+        try{
+            return DB::table('korisniksistema')
+                ->join('uloga', 'korisniksistema.idUloga', '=', 'uloga.idUloga')
+                ->where('idKorisnikSistema', '=', $id)
+                ->get();
+        }
+        catch(\Exception $e){
+            \Log::error('Greska pri dohvatanju svih korisnika, greska: '.$e->getMessage());
+        }
+    }
+
     private function updateLastLogin($idKorisnikSistema){
       try{
         $resultUpdateLastLogin = DB::table($this->tabela)
