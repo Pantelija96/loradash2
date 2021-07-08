@@ -34,6 +34,7 @@ class Usluga extends Model
     public function getAll()
     {
         return DB::table($this->tabela)
+            ->orderBy('datumPotpisaUgovora', 'desc')
             ->get();
     }
 

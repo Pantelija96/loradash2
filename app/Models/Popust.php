@@ -21,4 +21,15 @@ class Popust extends Model
     public $popustNaApp;
     public $popustNaUslugu;
 
+    public static function getAll(){
+        return DB::table('popuust')
+            ->get();
+    }
+
+    public static function getByUslugaId($id){
+        return DB::table('popust')
+            ->where('idUsluga','=', $id)
+            ->get();
+    }
+
 }

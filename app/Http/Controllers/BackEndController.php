@@ -261,17 +261,20 @@ class BackEndController extends Controller
 
         $text = "";
 
+
         //return dd($data);
 
         foreach ($data as $d){
             $usluga = $d['usluga'];
             $kam = $d["podaciKam"];
+            $prvoRacunanjeJednokratneCene = true;
             foreach ($d['sviSenzoriZaUslugu'] as $senzor){
                 $cena = 0;
                 //treba proveriti da li je placena jednokratna cena + update placanja jednokratne cene
-                if($usluga->placenaJednokratnaCena == 0){
+                if($usluga->placenaJednokratnaCena == 0 && $prvoRacunanjeJednokratneCene){
                     //nije placena jednokratna cena
                     $cena += $usluga->jednokratnaCena;
+                    $prvoRacunanjeJednokratneCene = false;
                     //update => placena jednokratna cena ili na kraju meseca napraviti cron???
                     //Usluga::updatePlacenaJednokratnaCena($usluga->idUsluga, 1);
                 }
@@ -312,7 +315,12 @@ class BackEndController extends Controller
                     $cena += $senzor->ukupanBrojSenzora * ($senzor->cenaSenzoraVanGR + $senzor->cenaAppVanGR + $senzor->cenaTehnickePodrske);
                 }
 
-                //treba proveriti da li je istekao probni period  -> da li se uopste pravi cdr za slucaj da nije istekao probni period? -> datumPocetakNaplate
+                //treba proveriti da li je istekao probni period  -> da li se uopste pravi cdr za slucaj da nije istekao probni period? -> datumPocetakNaplate -> ako je u probnom periodu cena je 0
+                if($usluga->probniPeriod != 0){
+                    $cena = 0;
+                }
+
+                //treba proveriti popuste
 
                 //$cena = $senzor->ukupanBrojSenzora * ($senzor->nabavnaCena + $senzor->cenaSenzoraGR + $senzor->cenaAppGR + $senzor->cenaServisaAktivnih + $senzor->cenaTehnickePodrske);
                 $text.="".date("d.m.Y",strtotime($usluga->datumPotpisaUgovora))."|".$kam->ime." ".$kam->prezime."|".$usluga->pib."|".$usluga->nazivFirmeDirekcije."|".$senzor->idSenzor."|".$cena."\n";

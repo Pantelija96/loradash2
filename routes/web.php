@@ -41,9 +41,11 @@ Route::post('/addsensor','BackEndController@addSensor')->name('addSensor');
 Route::get('/addservice','FrontEndController@addService');
 Route::post('/addservice','BackEndController@addService')->name('addService');
 
+Route::get('/popusti','FrontEndController@prikaziPopuste');
+Route::get('/popust/{id}','FrontEndController@dodajPopust');
+Route::post('/popust','BackEndController@dodajPopust')->name('dodajPopust');
+
 Route::get('/cdr','BackEndController@cdr');
-
-
 
 
 Route::group(['prefix'=> '/ajax'], function(){
