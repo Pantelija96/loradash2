@@ -323,7 +323,7 @@ class BackEndController extends Controller
                 //treba proveriti popuste
 
                 //$cena = $senzor->ukupanBrojSenzora * ($senzor->nabavnaCena + $senzor->cenaSenzoraGR + $senzor->cenaAppGR + $senzor->cenaServisaAktivnih + $senzor->cenaTehnickePodrske);
-                $text.="".date("d.m.Y",strtotime($usluga->datumPotpisaUgovora))."|".$kam->ime." ".$kam->prezime."|".$usluga->pib."|".$usluga->nazivFirmeDirekcije."|".$senzor->idSenzor."|".$cena."\n";
+                $text.="".date("d.m.Y",strtotime($usluga->datumPotpisaUgovora))."|".$kam->ime." ".$kam->prezime."|".$usluga->pib."|".$usluga->nazivFirmeDirekcije."|".$senzor->idSenzor."|".$senzor->ukupanBrojSenzora."|".$cena."\n";
             }
         }
 

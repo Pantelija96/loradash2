@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Popust;
 use App\Models\Usluga;
 use Illuminate\Http\Request;
 use App\Models\User;
@@ -59,6 +60,11 @@ class FrontEndController extends Controller
     {
         $this->data['sensors'] = Sensor::getAll();
         return view('shared.addService', $this->data);
+    }
+
+    function prikaziPopuste(){
+        $this->data['popusti'] = Popust::getAll();
+
     }
 
 }

@@ -23,6 +23,7 @@ class Popust extends Model
 
     public static function getAll(){
         return DB::table('popuust')
+            ->join('uslugasenzor','uslugasenzor.idUslugaSenzor','=','popust.idUslugaSenzor')
             ->get();
     }
 

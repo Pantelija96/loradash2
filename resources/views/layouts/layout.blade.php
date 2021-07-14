@@ -59,8 +59,10 @@
                     <span>Dodavanje usluge korisniku</span></a>
             </li>
 
+        @if(session()->get('korisnik')->idUloga == 1)
             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">
+
 
             <div class="sidebar-heading">
                 Podešavanja
@@ -99,7 +101,7 @@
                     <span>TEST - Kreiranje CDR fajlova</span></a>
             </li>
 
-
+            @endif
 
             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">

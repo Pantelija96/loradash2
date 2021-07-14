@@ -58,16 +58,18 @@ function pronadjiKupca() {
         type: 'GET',
         url: baseUrl + 'ajax/finduser/' + sifraKorisnika,
         success: function (data) {
-            //console.log(data.response);
+            //console.log(Object.keys(data.response.io3TS1GetAccountDetailsOutputMessage).length);
             //console.log(Object.keys(data.response.io3TS1GetAccountDetailsOutputMessage.io3Account).length);
 
             if(data.response.io3TS1GetAccountDetailsOutputMessage.io3Account == null){
                 alert("Nepostojeci ID, probajte da unesete novi!");
             }
             else {
-                if (Object.keys(data.response.io3TS1GetAccountDetailsOutputMessage.io3Account).length > 1) {
+                var podaci = data.response.io3TS1GetAccountDetailsOutputMessage.io3Account;
+                if (podaci.length > 1) {
                     //postoji vise zapisa sa soap-a
-                    var podaci = data.response.io3TS1GetAccountDetailsOutputMessage.io3Account;
+                    //console.log('vise zapisa');
+
                     var naziv = podaci[0].outAccountName;
                     var pib = podaci[0].outAccountPIB;
                     var mb = podaci[0].outAccountMB;
@@ -82,9 +84,10 @@ function pronadjiKupca() {
                     $("#direkcija").show();
                 } else {
                     //samo jedan zapis je dohvacen soap-om
-                    var naziv = data.response.io3TS1GetAccountDetailsOutputMessage.io3Account.outAccountName;
-                    var pib = data.response.io3TS1GetAccountDetailsOutputMessage.io3Account.outAccountPIB;
-                    var mb = data.response.io3TS1GetAccountDetailsOutputMessage.io3Account.outAccountMB;
+                    //console.log(data.response.io3TS1GetAccountDetailsOutputMessage);
+                    var naziv = podaci.outAccountName;
+                    var pib = podaci.outAccountPIB;
+                    var mb = podaci.outAccountMB;
 
                     document.getElementById('userName').value = naziv;
                     document.getElementById('inputPIB').value = pib;
