@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\LokacijaApp;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -13,6 +14,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        // \App\Models\User::factory(10)->create();
+        $this->call([
+            LokacijaAppSeeder::class,
+            NazivServisaSeeder::class,
+            PartnerSeeder::class,
+            StavkaFaktureSeeder::class,
+            TehnologijeSeeder::class,
+            TipServisaSeeder::class,
+            TipUgovoraSeeder::class,
+            UlogaSeeder::class,
+            VrstaSenzoraSeeder::class
+        ]);
     }
 }

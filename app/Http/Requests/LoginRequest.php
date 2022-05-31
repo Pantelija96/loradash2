@@ -1,0 +1,40 @@
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class LoginRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     *
+     * @return bool
+     */
+    public function authorize()
+    {
+        return true;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array
+     */
+    public function rules()
+    {
+        return [
+            'lozinka' => ['required'],
+            'email' => ['required','email']
+        ];
+    }
+
+    public function messages()
+    {
+        return [
+            'lozinka.required' => 'Lozinka je obavezno polje!',
+            'email.required' => 'Email je obavezno polje!',
+            'email.email' => 'Email mora imati formu emaila!'
+        ];
+    }
+}

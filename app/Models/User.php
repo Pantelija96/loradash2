@@ -1,125 +1,60 @@
 <?php
 
-/*catch(\Exception $e){
-  \Log::error('Greska pri loginu korisnika, greska: '.$e->getMessage());
-}*/
-
-
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
-use Illuminate\Support\Facades\DB;
-
-class User extends Model
+/**
+ * App\Models\User
+ *
+ * @property int $id
+ * @property string $ime
+ * @property string $preizime
+ * @property string $email
+ * @property string $password
+ * @property string $lastLogin
+ * @property int $deaktiviran
+ * @property string|null $remember_token
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property int $id_uloga
+ * @property-read \Illuminate\Notifications\DatabaseNotificationCollection|\Illuminate\Notifications\DatabaseNotification[] $notifications
+ * @property-read int|null $notifications_count
+ * @property-read \Illuminate\Database\Eloquent\Collection|\Laravel\Sanctum\PersonalAccessToken[] $tokens
+ * @property-read int|null $tokens_count
+ * @method static \Database\Factories\UserFactory factory(...$parameters)
+ * @method static \Illuminate\Database\Eloquent\Builder|User newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|User newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder|User query()
+ * @method static \Illuminate\Database\Eloquent\Builder|User whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|User whereDeaktiviran($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|User whereEmail($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|User whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|User whereIdUloga($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|User whereIme($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|User whereLastLogin($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|User wherePassword($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|User wherePreizime($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|User whereRememberToken($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|User whereUpdatedAt($value)
+ * @mixin \Eloquent
+ * @property string $prezime
+ * @method static \Illuminate\Database\Eloquent\Builder|User wherePrezime($value)
+ */
+class User extends Authenticatable
 {
-    private $tabela = 'korisniksistema';
+    use HasApiTokens, HasFactory, Notifiable;
 
-    public $idKorisnikSistema;
-    public $idUloga;
-    public $ime;
-    public $prezime;
-    public $lozinka;
-    public $email;
-    public $datumRegistracije;
-    public $datumPoslednjegLogovanja;
 
-    public static function getAll(){
-      try{
-        return DB::table('korisniksistema')
-          ->join('uloga', 'korisniksistema.idUloga', '=', 'uloga.idUloga')
-          ->get();
-      }
-      catch(\Exception $e){
-        \Log::error('Greska pri dohvatanju svih korisnika, greska: '.$e->getMessage());
-      }
+    protected $hidden = [
+        'password',
+    ];
+
+    public function getUloga(){
+        return $this->belongsTo( Uloga::class,'id_uloga');
     }
-
-    public static function getOne($id){
-        try{
-            return DB::table('korisniksistema')
-                ->join('uloga', 'korisniksistema.idUloga', '=', 'uloga.idUloga')
-                ->where('idKorisnikSistema', '=', $id)
-                ->get();
-        }
-        catch(\Exception $e){
-            \Log::error('Greska pri dohvatanju svih korisnika, greska: '.$e->getMessage());
-        }
-    }
-
-    private function updateLastLogin($idKorisnikSistema){
-      try{
-        $resultUpdateLastLogin = DB::table($this->tabela)
-          ->where("idKorisnikSistema", '=', $idKorisnikSistema)
-          ->update([
-            "datumPoslednjegLogovanja" => date('Y-m-d H:i:s', time())
-          ]);
-
-          if($resultUpdateLastLogin){
-            return true;
-          }
-          else{
-            return false;
-          }
-      }
-      catch(\Exception $e){
-        \Log::error('Greska pri update-u poslednjeg logovanja, greska: '.$e->getMessage());
-      }
-    }
-
-    public function login(){
-      try{
-        $result = DB::table($this->tabela)
-          ->join('uloga', 'korisniksistema.idUloga', '=', 'uloga.idUloga')
-          ->where([
-            'email' => $this->email,
-            'lozinka' => md5($this->lozinka)
-          ])
-          ->get();
-      }
-      catch(\Exception $e){
-        \Log::error('Greska pri loginu korisnika, greska: '.$e->getMessage());
-      }
-
-      if(count($result) == 1){
-        if($this->updateLastLogin($result[0]->idKorisnikSistema)){
-          return $result[0];
-        }
-      }
-    }
-
-    public function changePassword(){
-      try{
-        $result = DB::table($this->tabela)
-          ->where('idKorisnikSistema', $this->idKorisnikSistema)
-          ->update([
-            'lozinka' => md5($this->lozinka)
-          ]);
-
-          return $result;
-      }
-      catch(\Exception $e){
-        \Log::error('Greska pri izmeni lozinke korisnika, greska: '.$e->getMessage());
-      }
-    }
-
-    public function insertNewUser(){
-      try{
-        return DB::table($this->tabela)
-          ->insert([
-            'idUloga' => 2,
-            'ime' => $this->ime,
-            'prezime' => $this->prezime,
-            'lozinka' => md5($this->lozinka),
-            'email' => $this->email,
-            'datumRegistracije' => date('Y-m-d h:i:s', time()),
-            'datumPoslednjegLogovanja' => date('Y-m-d H:i:s', time())
-          ]);
-      }
-      catch(\Exception $e){
-        \Log::error('Greska pri insertu novog korisnika, greska: '.$e->getMessage());
-      }
-    }
-
 }

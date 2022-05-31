@@ -1,6 +1,0 @@
-2021-01-05 11:26:59|Pantelija Stosic|2|naziv firme direkcije 2|1|Senzor1|20|?
-2021-01-05 11:26:59|Pantelija Stosic|2|naziv firme direkcije 2|2|Senzor2|20|?
-2021-01-05 11:26:59|Pantelija Stosic|2|naziv firme direkcije 1 2|1|Senzor2|5|?
-2021-01-05 09:15:39|Pantelija Stosic|1|naziv firme direkcije 1|1|Senzor1|15|?
-
-Datum potpisa ugovora|Kam koji je potipaso ugovor sa klijentom|PIB|Naziv firme i direkcije|Lokalni ID senzora|Broj senzora => Broj senzora-broj neaktivnih senozra | brojSenzora*(cenaApp*cenaServisa*cenaTehPod*cenaSenzora) +
