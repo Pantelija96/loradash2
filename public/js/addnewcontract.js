@@ -25,7 +25,8 @@ const firstStepIDs = [
     'uo',
     'tip_tehnologije',
     'vrsta_senzora',
-    'lokacija_app'
+    'lokacija_app',
+    'brojDodeljenih'
 ];
 var stavkeFakture = [];
 var pickDateOptions = {
@@ -45,7 +46,7 @@ function lokacijaApp(){
     var lokacija = $("#lokacija_app").val();
     if(parseInt(lokacija) === 1){
         $('#nazivWrap').css("display", "block");
-        $('#ipAddresaWrap').css("display", "block");
+        // $('#ipAddresaWrap').css("display", "block");
         proveraIp = true;
     }
     else{
@@ -53,42 +54,6 @@ function lokacijaApp(){
         $('#ipAddresaWrap').css("display", "none");
         proveraIp = false;
     }
-}
-function firstStepValidation(){
-    var errors = [];
-
-    for(var i = 0; i < firstStepIDs.length; i++){
-        var element = $("#"+firstStepIDs[i]);
-        var element_error = $("#"+firstStepIDs[i]+'_error');
-
-        element_error.attr('style','display: none;');
-
-        if(element.val() === "" || element.val() === null){
-            errors.push(firstStepIDs[i]+'_error');
-            element_error.attr('style','');
-        }
-    }
-
-    if(proveraIp) {
-        $("#naziv_servera_error").attr('style','display: none;');
-        $("#ip_adresa_error").attr('style','display: none;');
-        if($("#naziv_servera").val() === ""){
-            errors.push('naziv_servera_error');
-            $("#naziv_servera_error").attr('style','');
-        }
-
-        var ip = $("#ip_adresa").val();
-        var ipRegex = /^(?!0)(?!.*\.$)((1?\d?\d|25[0-5]|2[0-4]\d)(\.|$)){4}$/;
-        console.log('regex result ', ipRegex.test(ip));
-        if (!ipRegex.test(ip)) {
-            //nije prosao regularni izraz
-            errors.push('ip_adresa_error');
-            $("#ip_adresa_error").attr('style','');
-        }
-    }
-
-    //console.log('errors: ', errors);
-    return (errors.length === 0);
 }
 function secondStepVerification(){
     var rows_with_errors = [];
@@ -124,13 +89,19 @@ function secondStepVerification(){
         $("#naknada_" + (aktivneStavke[i]) + "_error").attr('style','display: none;');
         $("#status_" + (aktivneStavke[i]) + "_error").attr('style','display: none;');
 
+        $("#datum_kraj_" + (aktivneStavke[i]) + "_error2").attr('style','display: none;');
+
+        $("#min_" + (aktivneStavke[i]) + "_error").attr('style','display: none;');
+        $("#max_" + (aktivneStavke[i]) + "_error").attr('style','display: none;');
+
         var id_stavka = $("#stavka_fakture_"+(aktivneStavke[i])).val();
         var datum_pocetak = $("[name=datum_pocetak_"+aktivneStavke[i]+"_data]").val();
         var datum_kraj = $("[name=datum_kraj_"+aktivneStavke[i]+"_data]").val();
         var naknada = $("#naknada_"+(aktivneStavke[i])).val();
         var status = $("#status_"+(aktivneStavke[i])).val();
+        var min = parseInt($("#min_"+(aktivneStavke[i])).val());
+        var max = parseInt($("#max_"+(aktivneStavke[i])).val());
 
-        console.log(naknada);
 
         var row_errors = [];
 
@@ -159,6 +130,18 @@ function secondStepVerification(){
                 row_errors.push('datum_kraj_'+aktivneStavke[i]+ "_error");
             }
         }
+
+        var datumKraj = new Date(datum_kraj);
+        var datumPocetak = new Date(datum_pocetak);
+        if(datumKraj < datumPocetak){
+            row_errors.push('datum_kraj_'+aktivneStavke[i]+ "_error2");
+        }
+
+        if(max < min){
+            row_errors.push('min_'+aktivneStavke[i]+ "_error");
+            row_errors.push('max_'+aktivneStavke[i]+ "_error");
+        }
+
 
         if(row_errors.length !== 0){
             $("#row_" + (aktivneStavke[i]) + "_error").attr('style','');
@@ -206,7 +189,7 @@ function dohvatiKorisnika(){
             type: 'GET',
             url: baseUrl+'ajax/finduser/'+idKorisnika,
             success: function (data) {
-                //console.log(data);
+                console.log(data);
                 //dobija se no account found kad se posalje pib koji su oni probali! -> 13034891
 
                 if(data.response === false){
@@ -417,32 +400,27 @@ function addRow(){
                 <select name="stavka_fakture_`+brojRedova+`" id="stavka_fakture_`+brojRedova+`" data-placeholder="Stavka fakture" class="select new_row_select" onchange="stavkaChanged(`+brojRedova+`)">
                     <option></option>
                 </select>
-                <label id="stavka_fakture_`+brojRedova+`_error" for="stavka_fakture_`+brojRedova+`" class="validation-error-label" style="display: none;">Obavezno polje!</label>
             </div>
 
             <div class="col-md-1 form-group" style="margin-left: 5px;">
                 <input type="text" name="datum_pocetak_`+brojRedova+`" id="datum_pocetak_`+brojRedova+`" class="form-control pickadate-selectors" placeholder="Datum početak">
-                <label id="datum_pocetak_`+brojRedova+`_error" for="datum_pocetak_`+brojRedova+`" class="validation-error-label" style="display: none;">Mora biti prvi dan u mesecu!</label>
             </div>
 
             <div class="col-md-1 form-group" style="margin-left: 5px;">
                 <input type="text" name="datum_kraj_`+brojRedova+`" id="datum_kraj_`+brojRedova+`" class="form-control pickadate-selectors" placeholder="Datum kraj">
-                <label id="datum_kraj_`+brojRedova+`_error" for="datum_kraj_`+brojRedova+`" class="validation-error-label" style="display: none;">Mora biti poslednji dan u mesecu!</label>
             </div>
 
             <div class="col-md-2 form-group" style="margin-left: 5px;">
                 <input type="number" step=".01" min="0" name="naknada_`+brojRedova+`" id="naknada_`+brojRedova+`" class="form-control" min="0" value="0">
-                <label id="naknada_`+brojRedova+`_error" for="naknada_`+brojRedova+`" class="validation-error-label" style="display: none;">Obavezno polje!</label>
             </div>
 
             <div class="col-md-1 form-group" style="margin-left: 5px;">
-                    <select name="status_`+brojRedova+`" id="status_`+brojRedova+`" data-placeholder="Status" class="select">
-                        <option></option>
-                        <option value="1">Aktivni</option>
-                        <option value="2">Prijavljeni</option>
-                        <option value="3">N/A</option>
-                    </select>
-                    <label id="status_`+brojRedova+`_error" for="status_`+brojRedova+`" class="validation-error-label" style="display: none;">Obavezno polje!</label>
+                <select name="status_`+brojRedova+`" id="status_`+brojRedova+`" data-placeholder="Status" class="select">
+                    <option></option>
+                    <option value="1">Aktivni</option>
+                    <option value="2">Prijavljeni</option>
+                    <option value="3">N/A</option>
+                </select>
             </div>
 
             <div class="col-md-1 form-group" style="margin-left: 5px;">
@@ -482,7 +460,8 @@ function addRow(){
             </div>
 
             <div class="col-md-1 form-group" style="margin-left: 5px; ">
-                <label id="datum_kraj_`+brojRedova+`_error" for="datum_kraj_`+brojRedova+`" class="validation-error-label" style="display: none;">Mora biti prvi dan u mesecu!</label>
+                <label id="datum_kraj_`+brojRedova+`_error" for="datum_kraj_`+brojRedova+`" class="validation-error-label" style="display: none;">Mora biti poslednji dan u mesecu!</label>
+                <label id="datum_kraj_`+brojRedova+`_error2" for="datum_pocetak_`+brojRedova+`" class="validation-error-label" style="display: none;">Mora biti veci od datuma pocetka!</label>
             </div>
 
             <div class="col-md-2 form-group" style="margin-left: 5px; ">
@@ -491,6 +470,14 @@ function addRow(){
 
             <div class="col-md-1 form-group" style="margin-left: 5px; ">
                 <label id="status_`+brojRedova+`_error" for="status_`+brojRedova+`" class="validation-error-label" style="display: none;">Obavezno polje!</label>
+            </div>
+
+            <div class="col-md-1 form-group" style="margin-left: 5px; ">
+                <label id="min_`+brojRedova+`_error" for="min_`+brojRedova+`" class="validation-error-label" style="display: none;">Maximum mora biti veći od minimuma!</label>
+            </div>
+
+            <div class="col-md-1 form-group" style="margin-left: 5px; ">
+                <label id="max_`+brojRedova+`_error" for="max_`+brojRedova+`" class="validation-error-label" style="display: none;">Maximum mora biti veći od minimuma!</label>
             </div>
         </div>
     `;
@@ -589,6 +576,248 @@ function getSoapUser(){
         });
     }
 }
+
+
+var brojRedovaPropustanje = 1;
+var aktivniRedoviPropustanje = [1];
+function addRowPropustanje(){
+    brojRedovaPropustanje++;
+
+    var row = `
+        <div id="propustanje_row_`+brojRedovaPropustanje+`" style="margin-bottom: 50px;">
+            <label class="col-lg-2 control-label" for="ipPropustanje`+brojRedovaPropustanje+`">Mrežno propuštanje IP:PORT :</label>
+            <div class="col-lg-2">
+                <input type="text" class="form-control" placeholder="IP" id="ipPropustanje`+brojRedovaPropustanje+`" name="ipPropustanje`+brojRedovaPropustanje+`">
+            </div>
+            <div class="col-lg-1">
+                <input type="text" class="form-control" placeholder="PORT" id="portPropustanje`+brojRedovaPropustanje+`" name="portPropustanje`+brojRedovaPropustanje+`">
+            </div>
+
+            <label class="col-lg-1 control-label" for="appUrl`+brojRedovaPropustanje+`">URL aplikacije</label>
+            <div class="col-lg-3">
+                <input type="text" class="form-control" placeholder="URL aplikacije" id="appUrl`+brojRedovaPropustanje+`" name="appUrl`+brojRedovaPropustanje+`">
+            </div>
+
+            <div class="col-lg-3 text-center">
+                <a href="#/" onclick="addRowPropustanje()" class="button-back btn bg-telekom-slova">Dodaj red <i class="icon-plus3 position-right"></i></a>
+                <a href="#/" onclick="removeRowPropustanje(`+brojRedovaPropustanje+`)" class="button-back btn bg-telekom-slova">Orisi red <i class="icon-minus3 position-right"></i></a>
+            </div>
+        </div>
+        <div class="row" id="propustanje_row_`+brojRedovaPropustanje+`_error" style="display: none;">
+            <div class="col-md-2 form-group"></div>
+            <div class="col-md-2 form-group">
+                <label id="ip_`+brojRedovaPropustanje+`_error" for="ipPropustanje`+brojRedovaPropustanje+`" class="validation-error-label" style="display: none;">Obavezno polje/format ip adrese!</label>
+            </div>
+        </div>
+    `;
+
+    $("#propustanje_wrapper").append(row);
+
+    aktivniRedoviPropustanje.push(brojRedovaPropustanje);
+    $("#aktivniRedoviPropustanje").val(aktivniRedoviPropustanje);
+}
+function removeRowPropustanje(row_id){
+    if(aktivniRedoviPropustanje.length > 1){
+        $("#propustanje_row_"+row_id).remove();
+        $("#propustanje_row_"+row_id+"_error").remove();
+        var index = aktivniRedoviPropustanje.indexOf(row_id);
+        aktivniRedoviPropustanje.splice(index, 1);
+        $("#aktivniRedoviPropustanje").val(aktivniRedoviPropustanje);
+    }
+}
+
+var brojRedovaPojedinacniNalog = 1;
+var aktivniRedoviPojedinacniNalog = [1];
+function addRowPojedinacniNalog(){
+    brojRedovaPojedinacniNalog++;
+
+    var row = `
+        <div id="pojedinacniNalog_row_`+brojRedovaPojedinacniNalog+`">
+            <label class="col-lg-1 control-label" for="imePojedinacniNalog`+brojRedovaPojedinacniNalog+`">Ime:</label>
+            <div class="col-lg-1">
+                <input type="text" class="form-control" placeholder="Ime" id="imePojedinacniNalog`+brojRedovaPojedinacniNalog+`" name="imePojedinacniNalog`+brojRedovaPojedinacniNalog+`">
+            </div>
+
+            <label class="col-lg-1 control-label" for="prezimePojedinacniNalog`+brojRedovaPojedinacniNalog+`">Prezime:</label>
+            <div class="col-lg-1">
+                <input type="text" class="form-control" placeholder="Prezime" id="prezimePojedinacniNalog`+brojRedovaPojedinacniNalog+`" name="prezimePojedinacniNalog`+brojRedovaPojedinacniNalog+`">
+            </div>
+
+            <label class="col-lg-1 control-label" for="emailPojedinacniNalog`+brojRedovaPojedinacniNalog+`">E-mail:</label>
+            <div class="col-lg-2">
+                <input type="text" class="form-control" placeholder="E-mail" id="emailPojedinacniNalog`+brojRedovaPojedinacniNalog+`" name="emailPojedinacniNalog`+brojRedovaPojedinacniNalog+`">
+            </div>
+
+            <label class="col-lg-1 control-label" for="brojTelefonaPojedinacniNalog`+brojRedovaPojedinacniNalog+`">Broj telefona:</label>
+            <div class="col-lg-2">
+                <input type="text" class="form-control" placeholder="Broj telefona" id="brojTelefonaPojedinacniNalog`+brojRedovaPojedinacniNalog+`" name="brojTelefonaPojedinacniNalog`+brojRedovaPojedinacniNalog+`">
+            </div>
+
+            <div class="col-lg-2 text-center">
+                <a href="#/" onclick="addRowPojedinacniNalog()" class="button-back btn bg-telekom-slova">Dodaj red <i class="icon-plus3 position-right"></i></a>
+                <a href="#/" onclick="removeRowPojedinacniNalog(`+brojRedovaPojedinacniNalog+`, false)" class="button-back btn bg-telekom-slova">Orisi red <i class="icon-minus3 position-right"></i></a>
+            </div>
+        </div>
+        <div class="row" id="pojedinacniNalog_row_`+brojRedovaPojedinacniNalog+`_error" style="display: none;">
+            <div class="col-md-1 form-group"></div>
+            <div class="col-md-1 form-group">
+                <label id="imePojedinacniNalog_`+brojRedovaPojedinacniNalog+`_error" for="stavka_fakture_1" class="validation-error-label" style="display: none;">Obavezno polje!</label>
+            </div>
+
+            <div class="col-md-1 form-group"></div>
+            <div class="col-md-1 form-group">
+                <label id="prezimePojedinacniNalog_`+brojRedovaPojedinacniNalog+`_error" for="stavka_fakture_1" class="validation-error-label" style="display: none;">Obavezno polje!</label>
+            </div>
+
+            <div class="col-md-1 form-group"></div>
+            <div class="col-md-2 form-group">
+                <label id="emailPojedinacniNalog_`+brojRedovaPojedinacniNalog+`_error" for="stavka_fakture_1" class="validation-error-label" style="display: none;">Obavezno polje!</label>
+            </div>
+
+            <div class="col-md-1 form-group"></div>
+            <div class="col-md-2 form-group">
+                <label id="brojTelefonaPojedinacniNalog_`+brojRedovaPojedinacniNalog+`_error" for="stavka_fakture_1" class="validation-error-label" style="display: none;">Obavezno polje!</label>
+            </div>
+        </div>
+    `;
+
+    $("#pojedinacniNalog_wrapper").append(row);
+
+    aktivniRedoviPojedinacniNalog.push(brojRedovaPojedinacniNalog);
+    $("#aktivniRedoviPojedinacniNalog").val(aktivniRedoviPojedinacniNalog);
+}
+function removeRowPojedinacniNalog(row_id, in_db){
+    if(aktivniRedoviPojedinacniNalog.length > 1){
+        $("#pojedinacniNalog_row_"+row_id).remove();
+        $("#pojedinacniNalog_row_"+row_id+"_error").remove();
+        var index = aktivniRedoviPojedinacniNalog.indexOf(row_id);
+        aktivniRedoviPojedinacniNalog.splice(index, 1);
+        $("#aktivniRedoviPojedinacniNalog").val(aktivniRedoviPojedinacniNalog);
+    }
+}
+
+function firstStepValidation(){
+    var errors = [];
+
+    for(var i = 0; i < firstStepIDs.length; i++){
+        var element = $("#"+firstStepIDs[i]);
+        var element_error = $("#"+firstStepIDs[i]+'_error');
+
+        element_error.attr('style','display: none;');
+
+        if(firstStepIDs[i] === "brojDodeljenih"){
+            console.log('brojDodeljenih', element.val());
+            if(parseInt(element.val()) <= 0){
+                errors.push(firstStepIDs[i]+'_error');
+                element_error.attr('style','');
+            }
+        }
+        else{
+            if(element.val() === "0" || element.val() === "" || element.val() === null){
+                errors.push(firstStepIDs[i]+'_error');
+                element_error.attr('style','');
+            }
+        }
+    }
+
+    // if(proveraIp) {
+    //     $("#naziv_servera_error").attr('style','display: none;');
+    //     $("#ip_adresa_error").attr('style','display: none;');
+    //     if($("#naziv_servera").val() === ""){
+    //         errors.push('naziv_servera_error');
+    //         $("#naziv_servera_error").attr('style','');
+    //     }
+    //
+    //     for(var i = 0; i < aktivniRedoviPropustanje.length; i++){
+    //         var error_in_row = false;
+    //         var ip = $("#ipPropustanje"+aktivniRedoviPropustanje[i]).val();
+    //
+    //         $("#propustanje_row_"+aktivniRedoviPropustanje[i]+'_error').attr('style','display: none;');
+    //         $("#ip_"+aktivniRedoviPropustanje[i]+'_error').attr('style','display: none;');
+    //
+    //         if(ip === ""){
+    //             error_in_row = true;
+    //             errors.push("#ip_"+aktivniRedoviPropustanje[i]+'_error');
+    //             $("#ip_"+aktivniRedoviPropustanje[i]+'_error').attr('style','');
+    //         }
+    //         else{
+    //             const ipRegex = /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3}$/gm;
+    //             if (!ipRegex.test(ip)) {
+    //                 error_in_row = true;
+    //                 errors.push("#ip_"+aktivniRedoviPropustanje[i]+'_error');
+    //                 $("#ip_"+aktivniRedoviPropustanje[i]+'_error').attr('style','');
+    //             }
+    //         }
+    //
+    //         if(error_in_row){
+    //             $("#propustanje_row_"+aktivniRedoviPropustanje[i]+'_error').attr('style','');
+    //         }
+    //     }
+    //
+    //     // var ip = $("#ip_adresa").val();
+    //     // var ipRegex = /^(?!0)(?!.*\.$)((1?\d?\d|25[0-5]|2[0-4]\d)(\.|$)){4}$/;
+    //     // console.log('regex result ', ipRegex.test(ip));
+    //     // if (!ipRegex.test(ip)) {
+    //     //     //nije prosao regularni izraz
+    //     //     errors.push('ip_adresa_error');
+    //     //     $("#ip_adresa_error").attr('style','');
+    //     // }
+    // }
+
+    // for(var i = 0; i < aktivniRedoviPojedinacniNalog.length; i++){
+    //     var error_in_row = false;
+    //     var ime = $("#imePojedinacniNalog"+aktivniRedoviPojedinacniNalog[i]).val();
+    //     var prezime = $("#prezimePojedinacniNalog"+aktivniRedoviPojedinacniNalog[i]).val();
+    //     var email = $("#emailPojedinacniNalog"+aktivniRedoviPojedinacniNalog[i]).val();
+    //     var brojTelefona = $("#brojTelefonaPojedinacniNalog"+aktivniRedoviPojedinacniNalog[i]).val();
+    //
+    //     $("#pojedinacniNalog_row_"+aktivniRedoviPojedinacniNalog[i]+'_error').attr('style','display: none;');
+    //     $("#imePojedinacniNalog_"+aktivniRedoviPojedinacniNalog[i]+'_error').attr('style','display: none;');
+    //     $("#prezimePojedinacniNalog_"+aktivniRedoviPojedinacniNalog[i]+'_error').attr('style','display: none;');
+    //     $("#emailPojedinacniNalog_"+aktivniRedoviPojedinacniNalog[i]+'_error').attr('style','display: none;');
+    //     $("#brojTelefonaPojedinacniNalog_"+aktivniRedoviPojedinacniNalog[i]+'_error').attr('style','display: none;');
+    //     $("#pojedinacniNalog_row_"+aktivniRedoviPojedinacniNalog[i]+'_error').attr('style','display: none;');
+    //
+    //     if(ime === ""){
+    //         error_in_row = true;
+    //         errors.push("#imePojedinacniNalog_"+aktivniRedoviPojedinacniNalog[i]+'_error');
+    //         $("#imePojedinacniNalog_"+aktivniRedoviPojedinacniNalog[i]+'_error').attr('style','');
+    //     }
+    //     if(prezime === "") {
+    //         error_in_row = true;
+    //         errors.push("#prezimePojedinacniNalog_"+aktivniRedoviPojedinacniNalog[i]+'_error');
+    //         $("#prezimePojedinacniNalog_"+aktivniRedoviPojedinacniNalog[i]+'_error').attr('style','');
+    //     }
+    //     if(email === ""){
+    //         error_in_row = true;
+    //         errors.push("#emailPojedinacniNalog_"+aktivniRedoviPojedinacniNalog[i]+'_error');
+    //         $("#emailPojedinacniNalog_"+aktivniRedoviPojedinacniNalog[i]+'_error').attr('style','');
+    //     }
+    //     if(brojTelefona === ""){
+    //         error_in_row = true;
+    //         errors.push("#brojTelefonaPojedinacniNalog_"+aktivniRedoviPojedinacniNalog[i]+'_error');
+    //         $("#brojTelefonaPojedinacniNalog_"+aktivniRedoviPojedinacniNalog[i]+'_error').html('Obavezno polje!');
+    //         $("#brojTelefonaPojedinacniNalog_"+aktivniRedoviPojedinacniNalog[i]+'_error').attr('style','');
+    //     }
+    //     else{
+    //         const phoneNumberRegex = /^(0|\+381)\d{6,}$/;
+    //         if (!phoneNumberRegex.test(brojTelefona)) {
+    //             error_in_row = true;
+    //             errors.push("#brojTelefonaPojedinacniNalog_"+aktivniRedoviPojedinacniNalog[i]+'_error');
+    //             $("#brojTelefonaPojedinacniNalog_"+aktivniRedoviPojedinacniNalog[i]+'_error').html('Format broja nije odgovarajuci!');
+    //             $("#brojTelefonaPojedinacniNalog_"+aktivniRedoviPojedinacniNalog[i]+'_error').attr('style','');
+    //         }
+    //     }
+    //
+    //     if(error_in_row){
+    //         $("#pojedinacniNalog_row_"+aktivniRedoviPojedinacniNalog[i]+'_error').attr('style','');
+    //     }
+    // }
+
+    //console.log('errors: ', errors);
+    return (errors.length === 0);
+}
+
 $(document).ready(function() {
     //Forma podesavanja
     $.fn.stepy.defaults.legend = false;
@@ -602,6 +831,7 @@ $(document).ready(function() {
             var validation = firstStepValidation();
             posetaDrugojStrani = !validation;
             $('#vrsta_senzora').prop('readonly',true);
+            //drugi korak
             return validation;
         },
         finish: function() {

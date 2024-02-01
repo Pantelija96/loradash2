@@ -5,7 +5,7 @@ $(function() {
 function prikaziAlert(idZapisa, idBaze){
     var notice = new PNotify({
         title: 'Confirmation',
-        text: '<p>Da li ste sigurni da želite da obršete zapis?</p>',
+        text: '<p>Da li ste sigurni da želite da obršete stavku?</p>',
         hide: false,
         type: 'warning',
         addclass: 'bg-telekom-slova',

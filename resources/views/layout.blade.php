@@ -54,11 +54,11 @@
         <ul class="nav navbar-nav navbar-right" >
             <li class="dropdown dropdown-user">
                 <a class="dropdown-toggle test" data-toggle="dropdown">
-                    <span style="color:white;">{{ \Illuminate\Support\Facades\Auth::user()->getUloga->naziv }} | {{ \Illuminate\Support\Facades\Auth::user()->ime.' '.\Illuminate\Support\Facades\Auth::user()->prezime  }}</span>
-                    <i class="caret" style="color:white;"></i>
+                    <span>{{ \Illuminate\Support\Facades\Auth::user()->getUloga->naziv }} | {{ \Illuminate\Support\Facades\Auth::user()->ime.' '.\Illuminate\Support\Facades\Auth::user()->prezime  }} <i class="caret"></i></span>
                 </a>
 
                 <ul class="dropdown-menu dropdown-menu-right">
+                    <li><a href="{{ url('/profile/'.\Illuminate\Support\Facades\Auth::id()) }}"><i class="icon-user"></i> Profil</a></li>
                     <li><a href="{{ url('/logout') }}"><i class="icon-switch2"></i> Logout</a></li>
                 </ul>
             </li>
@@ -86,12 +86,13 @@
                             <li class="navigation-header"><span>Glavni meni</span> <i class="icon-menu" title="Main pages"></i></li>
                             <li @yield('homePageActive') ><a href="{{ url('/home') }}"><i class="icon-home4"></i> <span>Početna</span></a></li>
 
-
-                            <li  @yield('addNewActive')  ><a href="{{ url('/addnew') }}"><i class="icon-plus3"></i> <span>Dodaj novi ugovor</span></a></li>
+                            @if(\Illuminate\Support\Facades\Auth::user()->getUloga->id == 1 || \Illuminate\Support\Facades\Auth::user()->getUloga->id == 2)
+                                <li  @yield('addNewActive')  ><a href="{{ url('/addnew') }}"><i class="icon-plus3"></i> <span>Dodaj novi ugovor</span></a></li>
+                            @endif
 
                             @yield('edictcontract')
 
-                            @if(\Illuminate\Support\Facades\Auth::user()->getUloga->id == 1 || \Illuminate\Support\Facades\Auth::user()->getUloga->id == 2)
+                            @if(\Illuminate\Support\Facades\Auth::user()->getUloga->id == 1)
                                 <li class="navigation-header"><span>Administrator podrske</span> <i class="icon-menu" title="Main pages"></i></li>
                                 <li @yield('systemmanaging') >
                                     <a href="#"><i class="icon-gear"></i> <span>Menadzment sistema</span></a>
@@ -106,11 +107,12 @@
                                         <li @yield('lokacijaapp')><a href="{{ url('/menage/lokacijaapp') }}">Lokacija aplikacije</a></li>
                                     </ul>
                                 </li>
-                                @if(\Illuminate\Support\Facades\Auth::user()->getUloga->id == 1)
-                                    <li class="navigation-header"><span>Administratorski meni</span> <i class="icon-menu" title="Main pages"></i></li>
-                                    <li @yield('addNewUser') ><a href="{{ url('/addnewuser') }}"><i class="icon-user-plus"></i> <span>Dodaj novog korisnika portala</span></a></li>
-                                @endif
                             @endif
+{{--                            @if(\Illuminate\Support\Facades\Auth::user()->getUloga->id == 1 || \Illuminate\Support\Facades\Auth::user()->getUloga->id == 2)--}}
+{{--                            @if(\Illuminate\Support\Facades\Auth::user()->getUloga->id == 1)--}}
+{{--                                <li class="navigation-header"><span>Administratorski meni</span> <i class="icon-menu" title="Main pages"></i></li>--}}
+{{--                                <li @yield('addNewUser') ><a href="{{ url('/addnewuser') }}"><i class="icon-user-plus"></i> <span>Dodaj novog korisnika portala</span></a></li>--}}
+{{--                            @endif--}}
 
                         </ul>
                     </div>
@@ -134,7 +136,7 @@
 
             <!-- Footer -->
                 <div class="footer text-muted">
-                    &copy; 2021. <a href="{{ url('/home') }}">IoT Dashboard App</a> by <a href="#" target="">TERI Engineering</a>
+                    &copy; 2021. <a href="{{ url('/home') }}">IoT ugovori</a> by <a href="#" target="">TERI Engineering</a>
                 </div>
                 <!-- /footer -->
 

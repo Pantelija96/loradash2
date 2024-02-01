@@ -124,7 +124,7 @@
                                 <input type="email" name="email" id="email" class="form-control" placeholder="Email" @if(isset($korisnik)) value="{{ $korisnik['email'] }}" @else value="{{ old('email') }}" @endif>
                                 <label id="email_error" for="email" class="validation-error-label" style="display: none;">Obavezno polje!</label>
                                 @if($errors->any() && $errors->has('email'))
-                                    <label id="email_error_2" for="email" class="validation-error-label" style="display: block;">Obavezno polje!</label>
+                                    <label id="email_error_2" for="email" class="validation-error-label" style="display: block;">Postoji korisnik sa zadatim emailom!</label>
                                 @endif
                             </div>
                         </div>
@@ -133,7 +133,7 @@
                             <div class="form-group">
                                 <label class="col-lg-3 control-label" for="lozinka">Lozinka:</label>
                                 <div class="col-lg-9">
-                                    <input type="password" name="lozinka" id="lozinka" class="form-control" onchange="proveraLozinke()" placeholder="Lozinka" @if(isset($korisnik)) value="" @else value="{{ old('lozinka') }}" @endif>
+                                    <input type="password" name="lozinka" id="lozinka" class="form-control"  placeholder="Lozinka" @if(isset($korisnik)) value="" @else value="{{ old('lozinka') }}" @endif>
                                     <label id="lozinka_error" for="lozinka" class="validation-error-label" style="display: none;">Obavezno polje!</label>
                                     @if($errors->any() && $errors->has('lozinka'))
                                         <label id="lozinka_error_2" for="lozinka" class="validation-error-label" style="display: block;">Obavezno polje!</label>
@@ -144,7 +144,7 @@
                             <div class="form-group">
                                 <label class="col-lg-3 control-label" for="lozinkaPonovo">Lozinka ponovo:</label>
                                 <div class="col-lg-9">
-                                    <input type="password" name="lozinka_ponovo" id="lozinka_ponovo" class="form-control" onchange="proveraLozinke()" placeholder="Lozinka ponovo" @if(isset($korisnik)) value="" @else value="{{ old('lozinkaPonovo') }}" @endif>
+                                    <input type="password" name="lozinka_ponovo" id="lozinka_ponovo" class="form-control" onblur="proveraLozinke()" placeholder="Lozinka ponovo" @if(isset($korisnik)) value="" @else value="{{ old('lozinkaPonovo') }}" @endif>
                                     <label id="lozinka_ponovo_error" for="lozinka_ponovo" class="validation-error-label" style="display: none;">Obavezno polje, i lozinka i lozinka ponovo moraju imati istu vrednost!</label>
                                     @if($errors->any() && $errors->has('lozinka_ponovo'))
                                         <label id="lozinka_ponovo_error_2" for="lozinka_ponovo" class="validation-error-label" style="display: block;">Obavezno polje, i lozinka i lozinka ponovo moraju imati istu vrednost!</label>

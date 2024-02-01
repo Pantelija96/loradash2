@@ -46,7 +46,7 @@
 @section('content')
 
     <div class="panel panel-white">
-        <form class="stepy-callbacks form-horizontal" action="{{ route('addNewContract') }}" method="post">
+        <form class="stepy-callbacks form-horizontal" action="{{ route('addNewContract') }}" method="post" onsubmit="submit_button.disabled=true; return true;">
             {{ csrf_field() }}
             <fieldset title="Podaci o ugovoru">
                 <legend class="text-semibold">Podaci o ugovoru</legend>
@@ -257,6 +257,65 @@
                             </div>
                         </div>
 
+                        <div class="form-group">
+                            <label class="col-lg-2 control-label" for="brojDodeljenih">Broj dodeljenih licenci:</label>
+                            <div class="col-lg-4">
+                                <input type="number" class="form-control" value="0" min="0" step="1" id="brojDodeljenih" name="brojDodeljenih">
+                                <label id="brojDodeljenih_error" for="brojDodeljenih" class="validation-error-label" style="display: none;">Mora biti vece od 0!</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="pojedinacniNalog_wrapper">
+                            <input type="hidden" name="aktivniRedoviPojedinacniNalog" id="aktivniRedoviPojedinacniNalog" value="1">
+                            <div id="pojedinacniNalog_row_1">
+                                <label class="col-lg-1 control-label" for="imePojedinacniNalog1">Ime:</label>
+                                <div class="col-lg-1">
+                                    <input type="text" class="form-control" placeholder="Ime" id="imePojedinacniNalog1" name="imePojedinacniNalog1">
+                                </div>
+
+                                <label class="col-lg-1 control-label" for="prezimePojedinacniNalog1">Prezime:</label>
+                                <div class="col-lg-1">
+                                    <input type="text" class="form-control" placeholder="Prezime" id="prezimePojedinacniNalog1" name="prezimePojedinacniNalog1">
+                                </div>
+
+                                <label class="col-lg-1 control-label" for="emailPojedinacniNalog1">E-mail:</label>
+                                <div class="col-lg-2">
+                                    <input type="text" class="form-control" placeholder="E-mail" id="emailPojedinacniNalog1" name="emailPojedinacniNalog1">
+                                </div>
+
+                                <label class="col-lg-1 control-label" for="brojTelefonaPojedinacniNalog1">Broj telefona:</label>
+                                <div class="col-lg-2">
+                                    <input type="text" class="form-control" placeholder="Broj telefona" id="brojTelefonaPojedinacniNalog1" name="brojTelefonaPojedinacniNalog1">
+                                </div>
+
+                                <div class="col-lg-2 text-center">
+                                    <a href="#/" onclick="addRowPojedinacniNalog()" class="button-back btn bg-telekom-slova">Dodaj red <i class="icon-plus3 position-right"></i></a>
+                                    <a href="#/" onclick="removeRowPojedinacniNalog(1, false)" class="button-back btn bg-telekom-slova">Orisi red <i class="icon-minus3 position-right"></i></a>
+                                </div>
+                            </div>
+                            <div class="row" id="pojedinacniNalog_row_1_error" style="display: none;">
+                                <div class="col-md-1 form-group"></div>
+                                <div class="col-md-1 form-group">
+                                    <label id="imePojedinacniNalog_1_error" for="stavka_fakture_1" class="validation-error-label" style="display: none;">Obavezno polje!</label>
+                                </div>
+
+                                <div class="col-md-1 form-group"></div>
+                                <div class="col-md-1 form-group">
+                                    <label id="prezimePojedinacniNalog_1_error" for="stavka_fakture_1" class="validation-error-label" style="display: none;">Obavezno polje!</label>
+                                </div>
+
+                                <div class="col-md-1 form-group"></div>
+                                <div class="col-md-2 form-group">
+                                    <label id="emailPojedinacniNalog_1_error" for="stavka_fakture_1" class="validation-error-label" style="display: none;">Obavezno polje!</label>
+                                </div>
+
+                                <div class="col-md-1 form-group"></div>
+                                <div class="col-md-2 form-group">
+                                    <label id="brojTelefonaPojedinacniNalog_1_error" for="stavka_fakture_1" class="validation-error-label" style="display: none;">Obavezno polje!</label>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </fieldset>
 
@@ -276,7 +335,7 @@
                             <label class="col-lg-2 control-label" for="tip_tehnologije">Tip tehnologije:</label>
                             <div class="col-lg-4">
                                 @if(isset($tipovi_tehnologije) && count($tipovi_tehnologije)>0)
-                                    <select name="tip_tehnologije[]" multiple="multiple" id="tip_tehnologije" data-placeholder="Tip tehnologije" class="select multiple-custom">
+                                    <select name="tip_tehnologije[]" id="tip_tehnologije" data-placeholder="Tip tehnologije" class="select multiple-custom">
                                         <option></option>
                                         @foreach($tipovi_tehnologije as $tt)
                                             <option value="{{ $tt->id }}">{{ $tt->naziv }}</option>
@@ -337,8 +396,37 @@
                                 <input type="text" name="ip_adresa" id="ip_adresa" class="form-control" placeholder="IP Adresa">
                                 <label id="ip_adresa_error" for="ip_adresa" class="validation-error-label" style="display: none;">Obavezno polje, ili nepravilan oblik ip adrese!</label>
                             </div>
+                        </div>
 
+                        <br/>
 
+                        <div class="form-group" id="propustanje_wrapper">
+                            <input type="hidden" name="aktivniRedoviPropustanje" id="aktivniRedoviPropustanje" value="1">
+                            <div id="propustanje_row_1">
+                                <label class="col-lg-2 control-label" for="ipPropustanje1">Mrežno propuštanje IP PORT :</label>
+                                <div class="col-lg-2">
+                                    <input type="text" class="form-control" placeholder="IP" id="ipPropustanje1" name="ipPropustanje1">
+                                </div>
+                                <div class="col-lg-1">
+                                    <input type="text" class="form-control" placeholder="PORT" id="portPropustanje1" name="portPropustanje1">
+                                </div>
+
+                                <label class="col-lg-1 control-label" for="appUrl1">URL aplikacije</label>
+                                <div class="col-lg-3">
+                                    <input type="text" class="form-control" placeholder="URL aplikacije" id="appUrl1" name="appUrl1">
+                                </div>
+
+                                <div class="col-lg-3 text-center">
+                                    <a href="#/" onclick="addRowPropustanje()" class="button-back btn bg-telekom-slova">Dodaj red <i class="icon-plus3 position-right"></i></a>
+                                    <a href="#/" onclick="removeRowPropustanje(1)" class="button-back btn bg-telekom-slova">Orisi red <i class="icon-minus3 position-right"></i></a>
+                                </div>
+                            </div>
+                            <div class="row" id="propustanje_row_1_error" style="display: none;">
+                                <div class="col-md-2 form-group"></div>
+                                <div class="col-md-2 form-group">
+                                    <label id="ip_1_error" for="ipPropustanje1" class="validation-error-label" style="display: none;">Obavezno polje/format ip adrese!</label>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -475,6 +563,7 @@
 
                             <div class="col-md-1 form-group" style="margin-left: 5px; ">
                                 <label id="datum_kraj_1_error" for="datum_kraj_1" class="validation-error-label" style="display: none;">Mora biti poslednji dan u mesecu!</label>
+                                <label id="datum_kraj_1_error2" for="datum_kraj_1" class="validation-error-label" style="display: none;">Mora biti veci od datuma pocetka!</label>
                             </div>
 
                             <div class="col-md-2 form-group" style="margin-left: 5px; ">
@@ -484,13 +573,21 @@
                             <div class="col-md-1 form-group" style="margin-left: 5px; ">
                                 <label id="status_1_error" for="status_1" class="validation-error-label" style="display: none;">Obavezno polje!</label>
                             </div>
+
+                            <div class="col-md-1 form-group" style="margin-left: 5px; ">
+                                <label id="min_1_error" for="min_1" class="validation-error-label" style="display: none;">Maximum mora biti veći od minimuma!</label>
+                            </div>
+
+                            <div class="col-md-1 form-group" style="margin-left: 5px; ">
+                                <label id="max_1_error" for="max_1" class="validation-error-label" style="display: none;">Maximum mora biti veći od minimuma!</label>
+                            </div>
                         </div>
                     </div>
                 </fieldset>
                 <a href="#" onclick="addRow()" class="button-back btn bg-telekom-slova">Dodaj novi red <i class="icon-plus3 position-right"></i></a>
             </fieldset>
             <input type="hidden" name="aktivne_stavke" id="aktivne_stavke" value="">
-            <button type="submit" class="btn bg-telekom-slova stepy-finish">Sačuvaj <i class="icon-check position-right"></i></button>
+            <button type="submit" class="btn bg-telekom-slova stepy-finish" id="submit_button" name="submit_button" @if(\Illuminate\Support\Facades\Auth::user()->getUloga->id == 3) style="display: none;" @endif>Sačuvaj <i class="icon-check position-right"></i></button>
         </form>
     </div>
     @empty(!session('greska'))

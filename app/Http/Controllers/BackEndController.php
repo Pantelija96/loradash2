@@ -6,11 +6,14 @@ use App\Exports\UgovorExport;
 use App\Http\Requests\EditRequest;
 use App\Http\Requests\InsertRequest;
 use App\Http\Requests\LoginRequest;
+use App\Mail\EmailNotification;
+use App\Models\IP;
 use App\Models\KomercijalniUslovi;
 use App\Models\LokacijaApp;
 use App\Models\NazivServisa;
 use App\Models\Partner;
 use App\Models\PartnerUgovor;
+use App\Models\PojedinacniNalog;
 use App\Models\StavkaFakture;
 use App\Models\Tehnologije;
 use App\Models\TehnologijeUgovor;
@@ -29,23 +32,264 @@ use Illuminate\Support\Facades\Session;
 use SoapClient;
 use Symfony\Component\HttpFoundation\Response;
 use Maatwebsite\Excel\Facades\Excel;
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
 class BackendController extends Controller
 {
+    public function addUserOrGetId($podaciKorisnika){
+        if(Auth::attempt(['email' => $podaciKorisnika['email'], 'password' => $podaciKorisnika['lozinka'], 'deaktiviran' => false])){
+            User::whereId(Auth::id())->update([
+                'lastLogin' => date('Y-m-d H:i:s')
+            ]);
+        }
+        else{
+
+        }
+    }
+
     public function login(LoginRequest $request){
-        //proveriti da li je korisnik u lokalnoj bazi -> korinsik
-        //ako nije onda traziti na ldap-u
-        //ako ga nema ni tamo izbaciti error
 
         $validated = $request->validated();
 
-        if(Auth::attempt(['email' => $validated['email'], 'password' => $validated['lozinka'], 'deaktiviran' => false])){
-            return redirect('/home');
+        $adServer = "ldaps://it.telekom.yu";
+        $admin_group = "CN=iotbill.admin,OU=iot-MM,OU=Security,OU=Grupe,DC=it,DC=telekom,DC=yu";
+        $user_group = "CN=iotbill.user,OU=iot-MM,OU=Security,OU=Grupe,DC=it,DC=telekom,DC=yu";
+        $readonly_group = "CN=iotbill.readonly,OU=iot-MM,OU=Security,OU=Grupe,DC=it,DC=telekom,DC=yu";
+        ldap_set_option(NULL, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_ALLOW);
+        $ldap = ldap_connect($adServer);
+        if (!$ldap){
+            Log::error("Greska pri konekciji na ldap, id greska : ldap0 => ".$ldap);
+            return redirect('/')->withErrors('Neuspesna konekcija na ldap! Id greske: ldap0 !');
         }
-        else{
-            //proveriti na ldap-u
-            return redirect('/')->withErrors('Korisnik nije pronadjen!');
+
+        $podaciKorisnika = [];
+        $podaciKorisnika['email'] = $validated['email'];
+        $podaciKorisnika['lozinka'] = $validated['lozinka'];
+
+//        return dd($podaciKorisnika);
+
+        //debug
+        //echo "<pre>";  print_r($podaciKorisnika); echo"</pre>";
+
+        $username = explode('@',$validated['email'])[0];
+        $password = $validated['lozinka'];
+//        $username = "danilop";
+//        $password = "telekom1.";
+        $user_adm = "CN=svc.iotbilling,OU=ServisniNalozi,OU=SpecijalniNalozi,DC=it,DC=telekom,DC=yu";
+        $pass_adm = "Pet.2022!";
+
+        $ldaprdn = 'mydomain' . "\\" . $username;
+
+        ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
+        ldap_set_option($ldap, LDAP_OPT_REFERRALS, 0);
+
+        $bind = @ldap_bind($ldap, $user_adm, $pass_adm);
+        ldap_get_option($ldap, LDAP_OPT_DIAGNOSTIC_MESSAGE, $extended_error);
+
+        if (!empty($extended_error)) {
+            Log::error("Greska pri konekciji na ldap, id greska : ldap1 => ".$extended_error);
+            return redirect('/')->withErrors('Neuspesna konekcija na ldap! Id greske: ldap1 !');
         }
+
+        if ($bind) {
+            $filter="(sAMAccountName=$username)";
+            $result = ldap_search($ldap,"OU=Direkcije,DC=it,DC=telekom,DC=yu",$filter);
+            ldap_sort($ldap,$result,"sn");
+            $info = ldap_get_entries($ldap, $result);
+
+
+            //debug
+            //echo "<pre>";  print_r($info); echo"</pre>";
+
+            if(!isset($info[0]["cn"][0])){
+                Log::error('Greska pri konekciji na ldap, id greska : ldap1a => $fullName = $info[0][cn][0]; ima undefined offset[0]');
+                return redirect('/')->withErrors('Neuspesna konekcija na ldap! Id greske: ldap1a !');
+            }
+
+            $fullName = $info[0]["cn"][0];
+
+            for ($i=0; $i<$info["count"]; $i++)
+            {
+                if($info['count'] > 1)
+                    break;
+
+                $userDn = $info[$i]["distinguishedname"][0];
+            }
+
+            if ($info["count"]>0){
+                $bind_user = @ldap_bind($ldap, $userDn, $password);
+
+                if ($bind_user) {
+                    //uspesno pronadjen korisnik
+                    $filter1="(&(sAMAccountName=$username)(memberof=$admin_group))";
+                    $result1 = ldap_search($ldap,$userDn,$filter1);
+                    $info1 = ldap_get_entries($ldap, $result1);
+                    if ( $info1["count"]>0 ){
+                        //korisnik ima admin prava
+                        $podaciKorisnika['uloga'] = 1;
+//                        $this->addAndLoginUser($request, $podaciKorisnika);
+                    }
+                    else{
+                        $filter1="(&(sAMAccountName=$username)(memberof=$user_group))";
+                        $result1 = ldap_search($ldap,$userDn,$filter1);
+                        $info1 = ldap_get_entries($ldap, $result1);
+                        if ( $info1["count"]>0 ){
+                            $podaciKorisnika['uloga'] = 2;
+//                            $this->addAndLoginUser($request, $podaciKorisnika);
+                        }
+                        else{
+                            $filter1="(&(sAMAccountName=$username)(memberof=$readonly_group))";
+                            $result1 = ldap_search($ldap,$userDn,$filter1);
+                            $info1 = ldap_get_entries($ldap, $result1);
+                            if ( $info1["count"]>0 ){
+                                $podaciKorisnika['uloga'] = 3;
+//                                $this->addAndLoginUser($request, $podaciKorisnika);
+                            }
+                            else {
+                                Log::error("Korisnik $username se ne nalazi u odgovarajucoj grupi! Id greske : ldap2 .");
+                                return redirect('/')->withErrors('Neuspesna konekcija na ldap - korisnik nema neophodna ovlascenja za koriscenje portala! Id greske: ldap2 !');
+                            }
+                        }
+                    }
+
+                }
+                else{
+                    return redirect('/')->withErrors('Pogresan email i/ili lozinka!');
+                }
+            }
+            else{
+                return redirect('/')->withErrors('Korisnik nije pronadjen!');
+            }
+
+            @ldap_close($ldap);
+
+            //ovde stvarno ulogovati korisnika
+
+
+            if(str_contains($podaciKorisnika['email'], '@')){
+                $user = User::whereEmail($podaciKorisnika['email'])->first();
+            }
+            else{
+                $user = User::whereEmail($podaciKorisnika['email']."@telekom.rs")->first();
+            }
+
+//            return dd($user);
+
+            if(!empty($user)){
+                if(Auth::loginUsingId($user->id)){
+                    User::whereId($user->id)->update([
+                        'lastLogin' => date('Y-m-d H:i:s'),
+                        'id_uloga' => $podaciKorisnika['uloga']
+                    ]);
+                    //dd(Auth::id());
+                    return redirect('/home');
+                }
+            }
+            else{
+                //korisnik nije pronadjen -> prvi put se loguje na sistem => treba da se ubaci u lokalnu bazu i onda da se uloguje da moze da koristi app
+                $dbEmail = str_contains('@telekom.rs', $podaciKorisnika['email']) ? $podaciKorisnika['email'] : $podaciKorisnika['email']."@telekom.rs";
+                $dbLastName = " ";
+                if(isset(explode(" ", $fullName)[1])){
+                    $dbLastName = explode(" ", $fullName)[1];
+                }
+//                return dd($dbLastName);
+                try{
+                    $result = DB::table('users')
+                        ->insert([
+                            'ime' => explode(" ", $fullName)[0],
+                            'prezime' => $dbLastName,
+                            'email' => $dbEmail,
+                            'password' => Hash::make($podaciKorisnika['lozinka']),
+                            'id_uloga' => $podaciKorisnika['uloga'],
+                            'lastLogin' => date('Y-m-d H:i:s'),
+                            'deaktiviran' => false
+                        ]);
+                }
+                catch (\Exception $exception){
+                    Log::error("Greska pri kreiranju novog korisnika aplikacije, id greske : newUser1 => ".$exception->getMessage());
+                    return redirect('/')->withErrors("Greska pri kreiranju novog korisnika aplikacije, id greske : newUser1 !");
+                }
+                if($result){
+                    $user2 = User::whereEmail($dbEmail)->first();
+                    if(!empty($user2)){
+                        if(Auth::loginUsingId($user2->id)){
+                            User::whereId($user2->id)->update([
+                                'lastLogin' => date('Y-m-d H:i:s'),
+                                'id_uloga' => $podaciKorisnika['uloga']
+                            ]);
+                            //dd(Auth::id());
+                            return redirect('/home');
+                        }
+                        else{
+                            Log::error("Auth:attempt je false : newUser2 !");
+                            return redirect('/')->withErrors("Greska pri loginu, id greske: newUser2 !");
+                        }
+                    }
+                    else{
+                        Log::error("$ user2 je empty : newUser2a !");
+                        return redirect('/')->withErrors("Greska pri loginu, id greske: newUser2a !");
+                    }
+                }
+            }
+
+
+//            if(Auth::attempt(['email' => $podaciKorisnika['email'], 'password' => $podaciKorisnika['lozinka'], 'deaktiviran' => false])){
+//                User::whereId(Auth::id())->update([
+//                    'lastLogin' => date('Y-m-d H:i:s'),
+//                    'id_uloga' => $podaciKorisnika['uloga']
+//                ]);
+//                //dd(Auth::id());
+//                return redirect('/home');
+//            }
+//            else{
+//                //korisnik nije pronadjen -> prvi put se loguje na sistem => treba da se ubaci u lokalnu bazu i onda da se uloguje da moze da koristi app
+//                try{
+//                    $result = DB::table('users')
+//                        ->insert([
+//                            'ime' => explode(" ", $fullName)[0],
+//                            'prezime' => explode(" ", $fullName)[1],
+//                            'email' => $podaciKorisnika['email'],
+//                            'password' => Hash::make($podaciKorisnika['lozinka']),
+//                            'id_uloga' => $podaciKorisnika['uloga'],
+//                            'lastLogin' => date('Y-m-d H:i:s'),
+//                            'deaktiviran' => false
+//                        ]);
+//                }
+//                catch (\Exception $exception){
+//                    Log::error("Greska pri kreiranju novog korisnika aplikacije, id greske : newUser1 => ".$exception->getMessage());
+//                    return redirect('/')->withErrors("Greska pri kreiranju novog korisnika aplikacije, id greske : newUser1 !");
+//                }
+//                if($result){
+//                    if(Auth::attempt(['email' => $podaciKorisnika['email'], 'password' => $podaciKorisnika['lozinka'], 'deaktiviran' => false])){
+//                        User::whereId(Auth::id())->update([
+//                            'lastLogin' => date('Y-m-d H:i:s')
+//                        ]);
+//                        return redirect('/home');
+//                    }
+//                    else{
+//                        Log::error("Auth:attempt je false : newUser2 !");
+//                        return redirect('/')->withErrors("Greska pri loginu, id greske: newUser2 !");
+//                    }
+//                }
+//                else{
+//                    Log::error("$ Result je null kod dodavanja novog usera nakon komunikacije sa ldap-om, id greske: newUser3 ".$result);
+//                    return redirect('/')->withErrors("Greska pri loginu, id greske: newUser3 !");
+//                }
+//            }
+//
+
+
+
+
+
+
+        }
+        else {
+            Log::error("Greska pri bind-u korisnika $user_adm. Id greske: ldap3.");
+            return redirect('/')->withErrors('Neuspesna konekcija na ldap! Id greske: ldap3 !');
+        }
+
     }
     public function logout(){
         Session::flush();
@@ -227,7 +471,9 @@ class BackendController extends Controller
 
         //return dd($dom->saveXML());
 
-        $url = "http://10.1.32.179/CloudWebService/CloudWebService";
+        $url = "http://kajws3qa.it.telekom.yu/CloudWebService/CloudWebService";
+        //$url = "http://ws3.it.telekom.yu/CloudWebService/CloudWebService";
+        //$url = "http://10.1.32.179/CloudWebService/CloudWebService";
         $curl = curl_init($url);
         curl_setopt($curl, CURLOPT_URL, $url);
         curl_setopt($curl, CURLOPT_POST, true);
@@ -295,8 +541,8 @@ class BackendController extends Controller
         $date = $dom->createElementNS('http://www.telekomsrbija.com/ws/CloudWebService/Entities/', 'serviceDate',$data['datum_potpisivanja']);
         $commonDescription->appendChild($date);
 
-        $serviceName = $dom->createElementNS('http://www.telekomsrbija.com/ws/CloudWebService/Entities/', 'serviceName',$this->removeSC($data['naziv_servisa']));
-        $commonDescription->appendChild($serviceName);
+		$serviceName = $dom->createElementNS('http://www.telekomsrbija.com/ws/CloudWebService/Entities/', 'serviceName',$this->removeSC($data['naziv_servisa']));
+		$commonDescription->appendChild($serviceName);
 
         $serviceType = $dom->createElementNS('http://www.telekomsrbija.com/ws/CloudWebService/Entities/', 'serviceType',$this->removeSC($data['tip_servisa']));
         $commonDescription->appendChild($serviceType);
@@ -345,6 +591,17 @@ class BackendController extends Controller
 
         $appLocation = $dom->createElementNS('http://www.telekomsrbija.com/ws/CloudWebService/Entities/', 'applicationLocation',$this->removeSC($data['lokacija_aplikacije']));
         $commonDescription->appendChild($appLocation);
+
+		if($data['naziv_servera'] != null){
+			$serverName = $dom->createElementNS('http://www.telekomsrbija.com/ws/CloudWebService/Entities/', 'serverName',$this->removeSC($data['naziv_servera']));
+			$commonDescription->appendChild($serverName);
+		}
+
+		if($data['ip_adresa']){
+			$serverIpAddress = $dom->createElementNS('http://www.telekomsrbija.com/ws/CloudWebService/Entities/', 'serverIpAddress',$this->removeSC($data['ip_adresa']));
+			$commonDescription->appendChild($serverIpAddress);
+		}
+
 
         if(count($data['stavke_fakture']) > 0){
             foreach($data['stavke_fakture'] as $stavka){
@@ -424,7 +681,9 @@ class BackendController extends Controller
 
         //return dd($dom->saveXML());
 
-        $url = "http://10.1.32.179/CloudWebService/CloudWebService";
+        $url = "http://kajws3qa.it.telekom.yu/CloudWebService/CloudWebService";
+        //$url = "http://ws3.it.telekom.yu/CloudWebService/CloudWebService";
+        //$url = "http://10.1.32.179/CloudWebService/CloudWebService";
         $curl = curl_init($url);
         curl_setopt($curl, CURLOPT_URL, $url);
         curl_setopt($curl, CURLOPT_POST, true);
@@ -469,7 +728,7 @@ class BackendController extends Controller
             return true;
         }
         else{
-            Log::error("Greska pri dodavanju novog ugovora soap-request-1 => ".$resp);
+            Log::error("Greska pri dodavanju novog ugovora soap-request-1 => ".$resp." , status".$status);
             return false;
         }
 
@@ -495,7 +754,9 @@ class BackendController extends Controller
 
         //return $dom->saveXML();
 
-        $url = "http://10.1.32.179/CloudWebService/CloudWebService";
+        $url = "http://kajws3qa.it.telekom.yu/CloudWebService/CloudWebService";
+        //$url = "http://ws3.it.telekom.yu/CloudWebService/CloudWebService";
+        //$url = "http://10.1.32.179/CloudWebService/CloudWebService";
         $curl = curl_init($url);
         curl_setopt($curl, CURLOPT_URL, $url);
         curl_setopt($curl, CURLOPT_POST, true);
@@ -517,7 +778,7 @@ class BackendController extends Controller
             return true;
         }
         else{
-            Log::error("Greska pri dodavanju novog ugovora soap-request-1 => ".$resp);
+            Log::error("Greska pri brisanju ugovora soap-deleteIoTService-1 => ".$resp);
             return false;
         }
     }
@@ -527,15 +788,36 @@ class BackendController extends Controller
             VrstaSenzoraUgovor::whereIdUgovor($id)->delete();
             PartnerUgovor::whereIdUgovor($id)->delete();
             TehnologijeUgovor::whereIdUgovor($id)->delete();
+            PojedinacniNalog::whereIdUgovor($id)->delete();
+            DB::table('pojedinacni_nalozi')
+            ->where('ips', '=', $id)
+            ->delete();
             Ugovor::whereId($id)->delete();
         }
         catch (\Exception $exception){
             Log::error("Greska pri brisanju podataka za neuspeli ugovor => ".$exception->getMessage());
         }
     }
+    public function brisanjeNeuspelogUgovora2($id){
+        try{
+            KomercijalniUslovi::whereIdUgovor($id)->delete();
+            VrstaSenzoraUgovor::whereIdUgovor($id)->delete();
+            PartnerUgovor::whereIdUgovor($id)->delete();
+            TehnologijeUgovor::whereIdUgovor($id)->delete();
+            Ugovor::whereId($id)->delete();
+            return dd($id);
+        }
+        catch (\Exception $exception){
+            Log::error("Greska pri brisanju podataka za neuspeli ugovor => ".$exception->getMessage());
+        }
+//        $nalozi = DB::table('pojedinacni_nalozi')
+//            ->where('id_ugovor', '=', $id)
+//            ->get();
+//        return dd($nalozi[0]->id);
+    }
 
     public function addNewContract(Request $request){
-        //return dd($request->all());
+//        return dd($request->all());
         $request->validate([
             'id_kupac' => 'required',
             'connectivity_plan' => 'required',
@@ -573,6 +855,8 @@ class BackendController extends Controller
             'tip_servisa' => TipServisa::whereId($request->input('tip_servisa'))->first()->naziv,
             'lokacija_aplikacije' => LokacijaApp::whereId($request->input('lokacija_app'))->first()->naziv,
             'naziv_servisa' => NazivServisa::whereId($request->input('naziv_servisa'))->first()->naziv,
+			'ip_adresa' => $request->input('ip_adresa'),
+			'naziv_servera' => $request->input('naziv_servera'),
             'pratneri' => [],
             'tehnologije' => [],
             'senzori' => [],
@@ -605,6 +889,7 @@ class BackendController extends Controller
                     'telefon' => $request->input('telefon'),
                     'kam' => $request->input('kam'),
                     'dekativiran' => false,
+                    'brojDodeljenihLicenci' => $request->input('brojDodeljenih'),
                     'created_at' => date('Y-m-d H:i:s')
                 ]);
         }
@@ -617,6 +902,45 @@ class BackendController extends Controller
 
             // treba popuniti niz sa podacima kojih ima vise => partneri, tehnologije, vrste senzora, za sad ce biti to vrednost test
             // + komercijalni uslovi kako se dodaju
+
+            if($request->input('aktivniRedoviPojedinacniNalog') != null){
+                $stavke = explode(",", $request->input('aktivniRedoviPojedinacniNalog'));
+                $emailMessage = "
+                    <p>Kreiran novi ugovor: <strong>".$request->input('connectivity_plan')." -> ".$request->input('naziv_ugovora')." </strong> </p>
+                     <p>Kreirao ga je korisnik: <strong> ".Auth::user()->ime." ".Auth::user()->prezime."</strong>, id: <strong>".Auth::user()->id."</strong></p>
+                     <br/>
+                     <p>Lista kreiranih licenci</p>
+                     <ul>";
+                foreach ($stavke as $row_id){
+                    if($request->get('imePojedinacniNalog'.$row_id)){
+                        DB::table('pojedinacni_nalozi')
+                            ->insert([
+                                'id_ugovor' => $id_ugovor,
+                                'ime' => $request->get('imePojedinacniNalog'.$row_id),
+                                'prezime' => $request->get('prezimePojedinacniNalog'.$row_id),
+                                'email' => $request->get('emailPojedinacniNalog'.$row_id),
+                                'broj_telefona' => $request->get('brojTelefonaPojedinacniNalog'.$row_id)
+                            ]);
+                        $emailMessage.= "<li>".$request->get('imePojedinacniNalog'.$row_id)." ".$request->get('prezimePojedinacniNalog'.$row_id)." ".$request->get('emailPojedinacniNalog'.$row_id)." ".$request->get('brojTelefonaPojedinacniNalog'.$row_id)."</li>";
+                    }
+                }
+                $emailMessage.="</ul>";
+                $this->testEmail('Kreiran novi ugovor', $emailMessage);
+            }
+            if($request->input('aktivniRedoviPropustanje') != null){
+                $stavke = explode(",", $request->input('aktivniRedoviPropustanje'));
+                foreach ($stavke as $row_id){
+                    if($request->get('ipPropustanje'.$row_id)){
+                        DB::table('ips')
+                            ->insert([
+                                'id_ugovor' => $id_ugovor,
+                                'ip' => $request->get('ipPropustanje'.$row_id),
+                                'port' => $request->get('portPropustanje'.$row_id),
+                                'url' => $request->get('appUrl'.$row_id)
+                            ]);
+                    }
+                }
+            }
 
 
             foreach ($request->input('tip_tehnologije') as $id_tip_tehnologije){
@@ -741,7 +1065,7 @@ class BackendController extends Controller
 
     }
     public function editContract(Request $request){
-        //return dd($request->all());
+//        return dd($request->all());
         $partneri_array = explode(';',$request->input('partneri_naziv'));
         $tehnologije_array = explode(';',$request->input('tehnologije_naziv'));
         $senzori_array = explode(';',$request->input('senzori_naziv'));
@@ -761,12 +1085,158 @@ class BackendController extends Controller
             'senzori' => $senzori_array,
             'stavke_fakture' => [],
         ];
+        $id_ugovor = intval($request->input('id_ugovor'));
         //return dd($soapData);
-        //postoji vec ugovor, ne dodaje se novi samo komercijalni uslovi
+        //postoji vec ugovor, ne dodaje se novi samo komercijalni uslovi i pojedinacni nalozi
+
+        DB::table('ugovor')
+            ->where('id', $id_ugovor)
+            ->update([
+                'brojDodeljenihLicenci' => $request->input('brojDodeljenih')
+            ]);
+
+        $nalozi = explode(",", $request->input('aktivniRedoviPojedinacniNalog'));
+        $propustanja = explode(",", $request->input('aktivniRedoviPropustanje'));
+        $brojDodeljenihOld = intval($request->input('brojDodeljenihOld'));
+        $brojDodeljenih = intval($request->input('brojDodeljenih'));
+
+
+
+
+        $emailMessage = "<p>Editovan ugovor: <strong>".$request->input('connectivity_plan')." -> ".$request->input('naziv_ugovora')." </strong> </p>\n
+                         <p>Editovao ga je korisnik: <strong> ".Auth::user()->ime." ".Auth::user()->prezime."</strong>, id: <strong>".Auth::user()->id."</strong></p>\n";
+
+
+
+        if($brojDodeljenihOld !== $brojDodeljenih){
+            $emailMessage .= "<p>Trenutni broj dodeljenih licenci je: ".$request->input('brojDodeljenih').", pre edita bio je: ".$request->input('brojDodeljenihOld')."</p>\n";
+        }
+        else{
+            $emailMessage .= "<p>Broj licenci nije menjan, trenutni je: $brojDodeljenih</p>\n";
+        }
+
+
+        $izmenaNaloga = false;
+        if(count($nalozi)>0) {
+            $emailMessage.= "<br/>\n
+                 <h3>Lista naloga</h3>\n
+                 <ul>\n";
+            $postojeciNaloziPocetak = explode(",", $request->input('postojeciNaloziPocetak'));
+            $postojeciNalozi = explode(",", $request->input('postojeciNalozi'));
+            $diffArray = array_diff($postojeciNaloziPocetak, $postojeciNalozi);
+
+            foreach ($nalozi as $nalog) {
+                //prolazi se samo korz ubacene ili editovane naloge
+                if ($request->input('id_nalog' . $nalog) !== null) {
+                    //postojeci nalog, proveriti da li je editovan
+                    $idNalog = intval($request->input('id_nalog' . $nalog));
+                    $updateRes = DB::table('pojedinacni_nalozi')
+                        ->where('id', $idNalog)
+                        ->update([
+                        'id_ugovor' => $id_ugovor,
+                        'ime' => $request->get('imePojedinacniNalog' . $nalog),
+                        'prezime' => $request->get('prezimePojedinacniNalog' . $nalog),
+                        'email' => $request->get('emailPojedinacniNalog' . $nalog),
+                        'broj_telefona' => $request->get('brojTelefonaPojedinacniNalog' . $nalog)
+                    ]);
+                    if($updateRes == 1){
+                        //menjan nalog
+                        $izmenaNaloga = true;
+                        $emailMessage .= "<li> Menjan nalog: " . $request->get('imePojedinacniNalog' . $nalog) . " " . $request->get('prezimePojedinacniNalog' . $nalog) . " " . $request->get('emailPojedinacniNalog' . $nalog) . " " . $request->get('brojTelefonaPojedinacniNalog' . $nalog) . "</li>\n";
+                    }
+                }
+                else {
+                    //insert new
+                    DB::table('pojedinacni_nalozi')
+                        ->insert([
+                            'id_ugovor' => $id_ugovor,
+                            'ime' => $request->get('imePojedinacniNalog' . $nalog),
+                            'prezime' => $request->get('prezimePojedinacniNalog' . $nalog),
+                            'email' => $request->get('emailPojedinacniNalog' . $nalog),
+                            'broj_telefona' => $request->get('brojTelefonaPojedinacniNalog' . $nalog)
+                        ]);
+                    $emailMessage .= "<li> Nov nalog: " . $request->get('imePojedinacniNalog' . $nalog) . " " . $request->get('prezimePojedinacniNalog' . $nalog) . " " . $request->get('emailPojedinacniNalog' . $nalog) . " " . $request->get('brojTelefonaPojedinacniNalog' . $nalog) . "</li>\n";
+                    $izmenaNaloga = true;
+                }
+            }
+            if(!empty($diffArray)){
+//                return dd($diffArray);
+                foreach ($diffArray as $idObrisanog){
+                    $pojNalog = PojedinacniNalog::find($idObrisanog);
+                    $izmenaNaloga = true;
+                    $emailMessage .= "<li> Obrisan nalog: " . $pojNalog->ime . " " . $pojNalog->prezime . " " . $pojNalog->email . " " . $pojNalog->broj_telefona . "</li>\n";
+                }
+            }
+            $emailMessage.= "</ul>\n";
+        }
+        if($izmenaNaloga == false){
+            $emailMessage .= "<br/> <p>Lista naloga nije menjana!</p>\n";
+        }
+
+
+        $izmenaPropustanja = false;
+        if(count($propustanja)>0){
+            $emailMessage.= "<br/>\n
+                 <h3>Lista propustanja</h3>\n
+                 <ul>\n";
+            $postojecaPropustanjaPocetak = explode(",", $request->input('postojecaPropustanjaPocetak'));
+            $postojecaPropustanja = explode(",", $request->input('postojecaPropustanja'));
+            $diffArray = array_diff($postojecaPropustanjaPocetak, $postojecaPropustanja);
+
+            foreach ($propustanja as $propustanje){
+                if ($request->input('id_propustanje' . $propustanje) !== null) {
+                    //postojece propustanje, proveriti da li je editovano
+                    $idPropustanje = intval($request->input('id_propustanje' . $propustanje));
+                    $updateRes = DB::table('ips')
+                        ->where('id', $idPropustanje)
+                        ->update([
+                            'ip' => $request->get('ipPropustanje' . $propustanje),
+                            'port' => $request->get('portPropustanje' . $propustanje),
+                            'url' => $request->get('appUrl' . $propustanje)
+                        ]);
+                    if($updateRes == 1){
+                        //menjano propustanje
+                        $izmenaPropustanja = true;
+                        $emailMessage .= "<li> Menjano propustanje: " . $request->get('ipPropustanje' . $propustanje) . " " . $request->get('portPropustanje' . $propustanje) . " " . $request->get('appUrl' . $propustanje) . "</li>\n";
+                    }
+                }
+                else {
+                    //insert new
+                    DB::table('ips')
+                        ->insert([
+                            'id_ugovor' => $id_ugovor,
+                            'ip' => $request->get('ipPropustanje' . $propustanje),
+                            'port' => $request->get('portPropustanje' . $propustanje),
+                            'url' => $request->get('appUrl' . $propustanje)
+                        ]);
+                    $emailMessage .= "<li> Novo propustanje: " . $request->get('ipPropustanje' . $propustanje) . " " . $request->get('portPropustanje' . $propustanje) . " " . $request->get('appUrl' . $propustanje) . "</li>\n";
+                    $izmenaPropustanja = true;
+                }
+            }
+            if(!empty($diffArray)){
+//                return dd($diffArray);
+                foreach ($diffArray as $idObrisanog){
+                    $propustanje = IP::find($idObrisanog);
+                    $izmenaPropustanja = true;
+                    $emailMessage .= "<li> Obrisano propustanje: " . $propustanje->ip . " " . $propustanje->port . " " . $propustanje->url . " </li>\n";
+                }
+            }
+            $emailMessage.= "</ul>\n";
+        }
+        if($izmenaPropustanja == false){
+            $emailMessage .= "<br/> <p>Lista propustanja nije menjana!</p>\n";
+        }
+
+//        return dd($emailMessage);
+
+        DB::table('pojedinacni_nalozi')
+            ->where('id', $request->input('id_nalog' . $nalog))
+            ->where('deleted', true)
+            ->delete();
+        $this->testEmail('Editovan ugovor -> '.$request->input('broj_ugovora'), $emailMessage);
         if($request->input('aktivne_stavke') != null){
             //ima bar jedan komercijalni uslov
             $stavke = explode(",", $request->input('aktivne_stavke'));
-            $id_ugovor = intval($request->input('id_ugovor'));
 
             foreach ($stavke as $stavka){
                 if($request->input('id_komercijalni_uslov_'.$stavka) !== null){
@@ -850,8 +1320,6 @@ class BackendController extends Controller
                 }
             }
 
-
-
             //return dd($soapData);
             if($this->modifyIoTService($soapData, 'ModifyIoTService')){
                 return redirect('/home');
@@ -883,6 +1351,12 @@ class BackendController extends Controller
         }
     }
     public function deaktivirajUgovor($id){
+//        $nalozi = DB::table('pojedinacni_nalozi')
+//            ->where('id_ugovor', '=', $id)
+//            ->get();
+//        foreach ($nalozi as $nalog){
+//            return dd($nalog);
+//        }
         $ugovor = Ugovor::whereId($id)->first();
         $res = $this->deleteIoTService($ugovor["connectivity_plan"], $ugovor["datum_potpisivanja"]);
 
@@ -891,6 +1365,26 @@ class BackendController extends Controller
                 $deleteResult = Ugovor::where('id', $id)->update([
                     'dekativiran' => true
                 ]);
+
+                $nalozi = DB::table('pojedinacni_nalozi')
+                    ->where('id_ugovor', '=', $id)
+                    ->get();
+
+                $emailMessage = "
+                    <p>Deaktiviran ugovor: <strong>".$ugovor["connectivity_plan"]." -> ".$ugovor["naziv_ugovora"]." </strong> </p>
+                     <p>Deaktivirao ga je korisnik: <strong> ".Auth::user()->ime." ".Auth::user()->prezime."</strong>, id: <strong>".Auth::user()->id."</strong></p>
+                     <br/>
+                     <p>Lista naloga:</p>
+                     <ul>";
+                foreach ($nalozi as $nalog){
+                    $emailMessage.= "<li>".$nalog->ime." ".$nalog->prezime." ".$nalog->email." ".$nalog->broj_telefona."</li>";
+                }
+                DB::table('pojedinacni_nalozi')
+                    ->where('id_ugovor',$id)
+                    ->delete();
+                $emailMessage.="</ul>";
+                $this->testEmail('Deaktiviran ugovor', $emailMessage);
+
             }
             catch (\Exception $exception){
                 Log::error("Greska pri deaktivaciji ugovora delete-ugovor-1 => ".$exception->getMessage());
@@ -970,7 +1464,7 @@ class BackendController extends Controller
         $request->validate([
             'ime' => 'required',
             'prezime' => 'required',
-            'email' => 'required|email',
+            'email' => 'required|email|unique:users,email',
             'uloga' => 'required',
             'lozinka' => 'required',
             'lozinka_ponovo' => 'required'
@@ -1160,6 +1654,44 @@ class BackendController extends Controller
     public function deleteLokacijuApp($id){
         return $this->delete(LokacijaApp::class, $id, 1, 'lokacije aplikacije');
     }
+    public function deletePojedinacniNaloz($id){
+        try{
+            $deleteResult = PojedinacniNalog::where('id', $id)
+                ->update([
+                    'deleted' => true
+                ]);
+        }
+        catch (\Exception $exception){
+            Log::error("Greska pri brisanju pojedinacnog naloga delete-pojedinacni-nalog-1 => ".$exception->getMessage());
+            return response("Desila se greska! Id greske : delete-pojedinacni-nalog-1", Response::HTTP_BAD_REQUEST);
+        }
+        if($deleteResult){
+            return response('OK',Response::HTTP_OK);
+        }
+        else{
+            Log::error("Greska pri brisanju pojedinacnog naloga delete-pojedinacni-nalog-1 => ".var_dump($deleteResult));
+            return response("Desila se greska! Id greske : delete-pojedinacni-nalog-1", Response::HTTP_BAD_REQUEST);
+        }
+    }
+    public function deletePropustanje($id){
+        try{
+            $deleteResult = IP::where('id', $id)
+                ->update([
+                    'deleted' => true
+                ]);
+        }
+        catch (\Exception $exception){
+            Log::error("Greska pri brisanju propustanja delete-propustanje-nalog-1 => ".$exception->getMessage());
+            return response("Desila se greska! Id greske : delete-propustanje-nalog-1", Response::HTTP_BAD_REQUEST);
+        }
+        if($deleteResult){
+            return response('OK',Response::HTTP_OK);
+        }
+        else{
+            Log::error("Greska pri brisanju propustanja delete-propustanje-nalog-1 => ".var_dump($deleteResult));
+            return response("Desila se greska! Id greske : delete-propustanje-nalog-1", Response::HTTP_BAD_REQUEST);
+        }
+    }
 
     public function edit($model, $id, $error_id, $text, $data, $url){
         try{
@@ -1175,6 +1707,43 @@ class BackendController extends Controller
         else{
             Log::error("Greska pri editu $text edit-$error_id");
             return redirect()->back()->with(['error' => "Desila se greska! Id greske : edit-$error_id"]);
+        }
+    }
+
+    public function profile(Request $request){
+        $validated_data = $request->validate([
+            'id_korisnik' => 'required',
+//            'ime' => 'required',
+//            'prezime' => 'required',
+//            'email' => 'required',
+            'lozinka' => 'required',
+            'lozinka_ponovo' => 'required|same:lozinka'
+        ]);
+
+        $id = $request->input('id_korisnik');
+//        $ime = $request->input('ime');
+//        $prezime = $request->input('prezime');
+//        $email = $request->input('email');
+        $lozinka = $request->input('lozinka');
+
+        try{
+            $editResult = User::whereId($id)->update([
+//                'ime' => $ime,
+//                'prezime' => $prezime,
+//                'email' => $email,
+                'password' => Hash::make($lozinka)
+            ]);
+        }
+        catch (\Exception $exception){
+            Log::error("Greska pri editu profila edit-9 => ".$exception->getMessage());
+            return redirect()->back()->with(['error' => "Desila se greska! Id greske : edit-9"]);
+        }
+        if($editResult){
+            return redirect('/profile/'.$id);
+        }
+        else{
+            Log::error("Greska pri editu profila edit-9");
+            return redirect()->back()->with(['error' => "Desila se greska! Id greske : edit-9"]);
         }
     }
     public function editStavkaFakture(Request $request){
@@ -1265,44 +1834,102 @@ class BackendController extends Controller
             'name' => "name test"
         ];*/
 
-        $soapclient = new SoapClient('http://10.1.21.245:7810/services/GetAccountDetails?wsdl');
+        //$soapclient = new SoapClient('http://10.1.21.245:7810/services/GetAccountDetails?wsdl'); //Live url
+
+		$soapclient = new SoapClient('http://10.1.21.247:7810/services/GetAccountDetails?wsdl'); //QA url
         $params = array(
             "CustomerId" => $id
         );
         //22563316
         //2109697
+
+        //fizicko lice 3844509
         $result = $soapclient->__soapCall("GetAccountDetails", array($params));
+
+//        $obj["result"] = $result;
+//        //$obj["test"] = $test;
+//
+//        return \response($obj, Response::HTTP_OK);
+
         if(isset($result->Account)){
+
+            if($result->Account->AccountType == "Fizičko lice" || $result->Account->AccountType == "Fizičko lice invalid"){
+                $obj = [
+                    "id" => $id,
+                    "pib" => "/",
+                    "mbr" => isset($result->Account->ListOfAccount_PrimaryContact->Account_PrimaryContact->TS1PrimaryContactJMBG) ? $result->Account->ListOfAccount_PrimaryContact->Account_PrimaryContact->TS1PrimaryContactJMBG :  " ",
+                    "telefon" => isset($result->Account->ListOfAccount_PrimaryContact->Account_PrimaryContact->TS1PrimaryContactMobilePhoneNum) ? $result->Account->ListOfAccount_PrimaryContact->Account_PrimaryContact->TS1PrimaryContactMobilePhoneNum : " ",
+                    "kam" => isset($result->Account->AccountTeam) ? $result->Account->AccountTeam : " ",
+//                    "segm" => isset($result->Account->AccountSegment) ? $result->Account->AccountSegment : " ",
+                    "segm" => "/",
+                    "name" => isset($result->Account->AccountName) ? $result->Account->AccountName : " "
+                ];
+                if(isset($result->Account->ListOfAccount_PrimaryContact->Account_PrimaryContact->TS1PrimaryContactEmailAddress)){
+                    $obj["email"] = $result->Account->ListOfAccount_PrimaryContact->Account_PrimaryContact->TS1PrimaryContactEmailAddress;
+                }
+
+                $racuni = [];
+                //$test = [];
+                if(isset($result->Account->ListOfComInvoiceProfile)){
+                    if(is_array($result->Account->ListOfComInvoiceProfile->ComInvoiceProfile)) {
+                        foreach ($result->Account->ListOfComInvoiceProfile->ComInvoiceProfile as $racun) {
+                            //$test[] = $racun;
+                            if (str_contains($racun->BPProfileType,"Mobile")) {
+                                $racuni[] = $racun->BPCode;
+                            }
+                        }
+                    }
+                    else{
+                        //$test[] = $result->Account->ListOfComInvoiceProfile->ComInvoiceProfile->BPCode;
+                        if(str_contains($result->Account->ListOfComInvoiceProfile->ComInvoiceProfile->BPProfileType, 'Mobile')){
+                            $racuni[] = $result->Account->ListOfComInvoiceProfile->ComInvoiceProfile->BPCode;
+                        }
+                    }
+                }
+
+                $obj["racuni"] = $racuni;
+                //$obj["test"] = $test;
+
+                return \response($obj, Response::HTTP_OK);
+            }
+
+
             $obj = [
                 "id" => $id,
-                "pib" => $result->Account->AccountPIB,
-                "mbr" => $result->Account->AccountMB,
-                "telefon" => $result->Account->AccountMainPhoneNumber,
-                "kam" => $result->Account->AccountTeam,
-                "segm" => $result->Account->AccountSegment,
-                "name" => $result->Account->BusinessName
+                "pib" => $result->Account->AccountPIB ? $result->Account->AccountPIB : " ",
+                "mbr" => isset($result->Account->AccountMB) ? $result->Account->AccountMB :  " ",
+                "telefon" => isset($result->Account->AccountMainPhoneNumber) ? $result->Account->AccountMainPhoneNumber : " ",
+                "kam" => isset($result->Account->AccountTeam) ? $result->Account->AccountTeam : " ",
+                "segm" => isset($result->Account->AccountSegment) ? $result->Account->AccountSegment : " ",
+                "name" => isset($result->Account->BusinessName) ? $result->Account->BusinessName : " "
             ];
             if(isset($result->Account->MainEmailAddress)){
                 $obj["email"] = $result->Account->MainEmailAddress;
             }
 
+
+
             $racuni = [];
+			//$test = [];
             if(isset($result->Account->ListOfComInvoiceProfile)){
                 if(is_array($result->Account->ListOfComInvoiceProfile->ComInvoiceProfile)) {
                     foreach ($result->Account->ListOfComInvoiceProfile->ComInvoiceProfile as $racun) {
-                        if ($racun->BPProfileType !== "Fixed") {
+						//$test[] = $racun;
+                        if (str_contains($racun->BPProfileType,"Mobile")) {
                             $racuni[] = $racun->BPCode;
                         }
                     }
                 }
                 else{
-                    if($result->Account->ListOfComInvoiceProfile->ComInvoiceProfile->BPProfileType !== "Fixed"){
+					//$test[] = $result->Account->ListOfComInvoiceProfile->ComInvoiceProfile->BPCode;
+                    if(str_contains($result->Account->ListOfComInvoiceProfile->ComInvoiceProfile->BPProfileType, 'Mobile')){
                         $racuni[] = $result->Account->ListOfComInvoiceProfile->ComInvoiceProfile->BPCode;
                     }
                 }
             }
 
             $obj["racuni"] = $racuni;
+			//$obj["test"] = $test;
 
             return \response($obj, Response::HTTP_OK);
         }
@@ -1453,5 +2080,39 @@ class BackendController extends Controller
     }
     public function exportExcel2($test){
         return dd($test);
+    }
+
+
+    public function testEmail($subject, $data){
+        $mail = new PHPMailer(true);
+        try {
+//            $mail->SMTPDebug = 2;
+            $mail->isSMTP();
+            $mail->Host = '10.1.21.231';
+            $mail->SMTPAuth = false;
+            $mail->SMTPSecure = 'tls';
+            $mail->Port = 25;
+            $mail->SMTPOptions = array(
+                'ssl' => array(
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true
+                )
+            );
+
+            $mail->setFrom("iotugovori@telekom.rs");
+            $mail->addAddress('iot.ict@telekom.rs');
+
+            $mailContent = " <body> ".$data." </body> ";
+
+            $mail->isHTML(true);
+            $mail->Subject = $subject;
+            $mail->Body    = $mailContent;
+            $mail->AltBody = $mailContent;
+            $mail->send();
+        }
+        catch (Exception $e) {
+            Log::error("Greska pri slanju emaila => ".$e->getMessage());
+        }
     }
 }

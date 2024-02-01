@@ -25,7 +25,7 @@ class LoginRequest extends FormRequest
     {
         return [
             'lozinka' => ['required'],
-            'email' => ['required','email']
+            'email' => ['required']
         ];
     }
 
@@ -34,7 +34,6 @@ class LoginRequest extends FormRequest
         return [
             'lozinka.required' => 'Lozinka je obavezno polje!',
             'email.required' => 'Email je obavezno polje!',
-            'email.email' => 'Email mora imati formu emaila!'
         ];
     }
 }

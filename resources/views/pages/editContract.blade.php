@@ -42,7 +42,15 @@
                 <ul class="breadcrumb position-left">
                     <li><a href="{{ url('/home') }}">Početna</a></li>
                     <li><a href="{{ url('/editcontract').'/'.$ugovor->id }}">Podaci o ugovoru</a></li>
-                    <li><a href="#">{{ $ugovor->naziv_ugovra.(' - ').$ugovor->connectivity_plan }}</a></li>
+                    <li>
+                        <a href="#">{{ $ugovor->naziv_ugovra.(' - ').$ugovor->connectivity_plan }}</a>
+
+                    </li>
+                    @if($ugovor->dekativiran == 1)
+                        <li>
+                            <a href="#" class="bg-danger-300" style="padding: 10px 20px; width: 300px; color: white;">Deaktiviran ugovor</a>
+                        </li>
+                    @endif
                 </ul>
             </div>
         </div>
@@ -52,7 +60,7 @@
 
 @section('content')
     <div class="panel panel-white">
-        <form class="stepy-callbacks form-horizontal" action="{{ route('editCotract') }}" method="post">
+        <form class="stepy-callbacks form-horizontal" action="{{ route('editCotract') }}" method="post" id="edit_contract_form" onsubmit="edit_submit_button.disabled=true; return true;">
             {{ csrf_field() }}
             <input type="hidden" name="id_ugovor" id="id_ugovor" value="{{ $ugovor->id }}" />
             <input type="hidden" name="partneri_naziv" id="partneri_naziv" value="{{ $partneri_naziv }}"/>
@@ -278,6 +286,144 @@
                             </div>
                         </div>
 
+                        <div class="form-group">
+                            <label class="col-lg-2 control-label" for="brojDodeljenih">Broj dodeljenih licenci:</label>
+                            <div class="col-lg-4">
+                                <input type="hidden" id="brojDodeljenihOld" name="brojDodeljenihOld" value="{{$ugovor->brojDodeljenihLicenci}}">
+                                <input type="number" class="form-control" min="0" step="1" id="brojDodeljenih" name="brojDodeljenih" @if(isset($ugovor->brojDodeljenihLicenci)) value="{{$ugovor->brojDodeljenihLicenci}}" @endif>
+                                <label id="brojDodeljenih_error" for="brojDodeljenih" class="validation-error-label" style="display: none;">Mora biti vece od 0!</label>
+                            </div>
+                        </div>
+
+                        @if(isset($pojedinacni_nalozi) && count($pojedinacni_nalozi) > 0)
+                            <div class="form-group" id="pojedinacniNalog_wrapper">
+                                <input type="hidden" name="changedLicence" id="changedLicence" value="false"/>
+                                <input type="hidden" name="postojeciNalozi" id="postojeciNalozi" value="[]"/>
+                                <input type="hidden" name="postojeciNaloziPocetak" id="postojeciNaloziPocetak" value="[]"/>
+                                <input type="hidden" name="aktivniRedoviPojedinacniNalog" id="aktivniRedoviPojedinacniNalog" value="1"/>
+                                @foreach($pojedinacni_nalozi as $row)
+                                    <script>
+                                        var currentRow = parseInt('{{$loop->iteration }}');
+                                        brojRedovaPojedinacniNalog = currentRow;
+                                        aktivniRedoviPojedinacniNalog.push(currentRow);
+                                        aktivniRedoviPojedinacniNalogNaStartu.push(currentRow);
+                                        postojeciNalozi.push(parseInt('{{$row->id}}'));
+                                        postojeciNaloziPocetak.push(parseInt('{{$row->id}}'));
+                                        $("#postojeciNaloziPocetak").val(postojeciNaloziPocetak);
+                                        $("#postojeciNalozi").val(postojeciNalozi);
+                                        $("#aktivniRedoviPojedinacniNalog").val(aktivniRedoviPojedinacniNalog);
+                                    </script>
+                                    <div id="pojedinacniNalog_row_{{$loop->iteration }}">
+                                        <input type="hidden" name="id_nalog{{$loop->iteration}}" value="{{$row->id}}" />
+                                        <label class="col-lg-1 control-label" for="imePojedinacniNalog{{$loop->iteration }}">Ime:</label>
+                                        <div class="col-lg-1">
+                                            <input type="text" class="form-control" placeholder="Ime" id="imePojedinacniNalog{{$loop->iteration }}" name="imePojedinacniNalog{{$loop->iteration }}" value="{{$row->ime}}" onchange="izmenaNalogaIliPropustanja(1, this)">
+                                        </div>
+
+                                        <label class="col-lg-1 control-label" for="prezimePojedinacniNalog{{$loop->iteration }}">Prezime:</label>
+                                        <div class="col-lg-1">
+                                            <input type="text" class="form-control" placeholder="Prezime" id="prezimePojedinacniNalog{{$loop->iteration }}" name="prezimePojedinacniNalog{{$loop->iteration }}" value="{{$row->prezime}}" onchange="izmenaNalogaIliPropustanja(1, this)">
+                                        </div>
+
+                                        <label class="col-lg-1 control-label" for="emailPojedinacniNalog{{$loop->iteration }}">E-mail:</label>
+                                        <div class="col-lg-2">
+                                            <input type="text" class="form-control" placeholder="E-mail" id="emailPojedinacniNalog{{$loop->iteration }}" name="emailPojedinacniNalog{{$loop->iteration }}" value="{{$row->email}}" onchange="izmenaNalogaIliPropustanja(1, this)">
+                                        </div>
+
+                                        <label class="col-lg-1 control-label" for="brojTelefonaPojedinacniNalog{{$loop->iteration }}">Broj telefona:</label>
+                                        <div class="col-lg-2">
+                                            <input type="text" class="form-control" placeholder="Broj telefona" id="brojTelefonaPojedinacniNalog{{$loop->iteration }}" name="brojTelefonaPojedinacniNalog{{$loop->iteration }}" value="{{$row->broj_telefona}}" onchange="izmenaNalogaIliPropustanja(1, this)">
+                                        </div>
+
+                                        <div class="col-lg-2 text-center">
+                                            <a href="#/" onclick="addRowPojedinacniNalog()" class="button-back btn bg-telekom-slova">Dodaj red <i class="icon-plus3 position-right"></i></a>
+                                            <a href="#/" onclick="removeRowPojedinacniNalog({{$loop->iteration }}, {{$row->id}})" class="button-back btn bg-telekom-slova">Orisi red <i class="icon-minus3 position-right"></i></a>
+                                        </div>
+                                    </div>
+                                    <div class="row" id="pojedinacniNalog_row_{{$loop->iteration }}_error" style="display: none;">
+                                        <div class="col-md-1 form-group"></div>
+                                        <div class="col-md-1 form-group">
+                                            <label id="imePojedinacniNalog_{{$loop->iteration }}_error" for="stavka_fakture_{{$loop->iteration }}" class="validation-error-label" style="display: none;">Obavezno polje!</label>
+                                        </div>
+
+                                        <div class="col-md-1 form-group"></div>
+                                        <div class="col-md-1 form-group">
+                                            <label id="prezimePojedinacniNalog_{{$loop->iteration }}_error" for="stavka_fakture_{{$loop->iteration }}" class="validation-error-label" style="display: none;">Obavezno polje!</label>
+                                        </div>
+
+                                        <div class="col-md-1 form-group"></div>
+                                        <div class="col-md-2 form-group">
+                                            <label id="emailPojedinacniNalog_{{$loop->iteration }}_error" for="stavka_fakture_{{$loop->iteration }}" class="validation-error-label" style="display: none;">Obavezno polje!</label>
+                                        </div>
+
+                                        <div class="col-md-1 form-group"></div>
+                                        <div class="col-md-2 form-group">
+                                            <label id="brojTelefonaPojedinacniNalog_{{$loop->iteration }}_error" for="stavka_fakture_{{$loop->iteration }}" class="validation-error-label" style="display: none;">Obavezno polje!</label>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <script>
+                                brojRedovaPojedinacniNalog = 1;
+                                aktivniRedoviPojedinacniNalog = [1];
+                                aktivniRedoviPojedinacniNalogNaStartu = [1];
+                            </script>
+                            <div class="form-group" id="pojedinacniNalog_wrapper">
+                                <input type="hidden" name="changedLicence" id="changedLicence" value="false"/>
+                                <input type="hidden" name="postojeciNalozi" id="postojeciNalozi" value="[]"/>
+                                <input type="hidden" name="postojeciNaloziPocetak" id="postojeciNaloziPocetak" value="[]"/>
+                                <input type="hidden" name="aktivniRedoviPojedinacniNalog" id="aktivniRedoviPojedinacniNalog" value="1"/>
+                                <div id="pojedinacniNalog_row_1">
+                                    <label class="col-lg-1 control-label" for="imePojedinacniNalog1">Ime:</label>
+                                    <div class="col-lg-1">
+                                        <input type="text" class="form-control" placeholder="Ime" id="imePojedinacniNalog1" name="imePojedinacniNalog1" onchange="izmenaNalogaIliPropustanja(1, this)">
+                                    </div>
+
+                                    <label class="col-lg-1 control-label" for="prezimePojedinacniNalog1">Prezime:</label>
+                                    <div class="col-lg-1">
+                                        <input type="text" class="form-control" placeholder="Prezime" id="prezimePojedinacniNalog1" name="prezimePojedinacniNalog1" onchange="izmenaNalogaIliPropustanja(1, this)">
+                                    </div>
+
+                                    <label class="col-lg-1 control-label" for="emailPojedinacniNalog1">E-mail:</label>
+                                    <div class="col-lg-2">
+                                        <input type="text" class="form-control" placeholder="E-mail" id="emailPojedinacniNalog1" name="emailPojedinacniNalog1">
+                                    </div>
+
+                                    <label class="col-lg-1 control-label" for="brojTelefonaPojedinacniNalog1">Broj telefona:</label>
+                                    <div class="col-lg-2">
+                                        <input type="text" class="form-control" placeholder="Broj telefona" id="brojTelefonaPojedinacniNalog1" name="brojTelefonaPojedinacniNalog1">
+                                    </div>
+
+                                    <div class="col-lg-2 text-center">
+                                        <a href="#/" onclick="addRowPojedinacniNalog()" class="button-back btn bg-telekom-slova">Dodaj red <i class="icon-plus3 position-right"></i></a>
+                                        <a href="#/" onclick="removeRowPojedinacniNalog(1, false)" class="button-back btn bg-telekom-slova">Orisi red <i class="icon-minus3 position-right"></i></a>
+                                    </div>
+                                </div>
+                                <div class="row" id="pojedinacniNalog_row_1_error" style="display: none;">
+                                    <div class="col-md-1 form-group"></div>
+                                    <div class="col-md-1 form-group">
+                                        <label id="imePojedinacniNalog_1_error" for="stavka_fakture_1" class="validation-error-label" style="display: none;">Obavezno polje!</label>
+                                    </div>
+
+                                    <div class="col-md-1 form-group"></div>
+                                    <div class="col-md-1 form-group">
+                                        <label id="prezimePojedinacniNalog_1_error" for="stavka_fakture_1" class="validation-error-label" style="display: none;">Obavezno polje!</label>
+                                    </div>
+
+                                    <div class="col-md-1 form-group"></div>
+                                    <div class="col-md-2 form-group">
+                                        <label id="emailPojedinacniNalog_1_error" for="stavka_fakture_1" class="validation-error-label" style="display: none;">Obavezno polje!</label>
+                                    </div>
+
+                                    <div class="col-md-1 form-group"></div>
+                                    <div class="col-md-2 form-group">
+                                        <label id="brojTelefonaPojedinacniNalog_1_error" for="stavka_fakture_1" class="validation-error-label" style="display: none;">Obavezno polje!</label>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
                     </div>
                 </fieldset>
 
@@ -369,10 +515,84 @@
 
                         </div>
 
+                        @if(isset($ips) && count($ips) > 0)
+                            <div class="form-group" id="propustanje_wrapper">
+                                <input type="hidden" name="changedPropustanje" id="changedPropustanje" value="false">
+                                <input type="hidden" name="postojecaPropustanja" id="postojecaPropustanja" value="[]">
+                                <input type="hidden" name="postojecaPropustanjaPocetak" id="postojecaPropustanjaPocetak" value="[]">
+                                <input type="hidden" name="aktivniRedoviPropustanje" id="aktivniRedoviPropustanje" value="1">
+                                @foreach($ips as $ip)
+                                    <script>
+                                        var currentRow2 = parseInt('{{$loop->iteration }}');
+                                        brojRedovaPropustanje = currentRow2;
+                                        aktivniRedoviPropustanje.push(currentRow2);
+                                        aktivniRedoviPropustanjeNaStartu.push(currentRow2);
+                                        postojecaPropustanja.push(parseInt('{{$ip->id}}'));
+                                        postojecaPropustanjaPocetak.push(parseInt('{{$ip->id}}'));
+                                        $("#postojecaPropustanjaPocetak").val(postojecaPropustanjaPocetak);
+                                        $("#postojecaPropustanja").val(postojecaPropustanja);
+                                        $("#aktivniRedoviPropustanje").val(aktivniRedoviPropustanje);
+                                    </script>
+                                    <div id="propustanje_row_{{$loop->iteration}}">
+                                        <input type="hidden" name="id_propustanje{{$loop->iteration}}" value="{{$ip->id}}" />
+                                        <label class="col-lg-2 control-label" for="ipPropustanje1">Mrežno propuštanje IP:PORT :</label>
+                                        <div class="col-lg-2">
+                                            <input type="text" class="form-control" placeholder="IP" id="ipPropustanje1" name="ipPropustanje{{$loop->iteration }}" value="{{$ip->ip}}" onchange="izmenaNalogaIliPropustanja(2, this)">
+                                        </div>
+                                        <div class="col-lg-1">
+                                            <input type="text" class="form-control" placeholder="PORT" id="portPropustanje1" name="portPropustanje{{$loop->iteration }}" value="{{$ip->port}}" onchange="izmenaNalogaIliPropustanja(2, this)">
+                                        </div>
+
+                                        <label class="col-lg-1 control-label" for="appUrl1">URL aplikacije</label>
+                                        <div class="col-lg-4">
+                                            <input type="text" class="form-control" placeholder="URL aplikacije" id="appUrl1" name="appUrl{{$loop->iteration }}" value="{{$ip->url}}" onchange="izmenaNalogaIliPropustanja(2, this)">
+                                        </div>
+
+                                        <div class="col-lg-2 text-center">
+                                            <a href="#/" onclick="addRowPropustanje()" class="button-back btn bg-telekom-slova">Dodaj red <i class="icon-plus3 position-right"></i></a>
+                                            <a href="#/" onclick="removeRowPropustanje({{$loop->iteration }}, {{$ip->id}})" class="button-back btn bg-telekom-slova">Orisi red <i class="icon-minus3 position-right"></i></a>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="form-group" id="propustanje_wrapper">
+                                <input type="hidden" name="changedPropustanje" id="changedPropustanje" value="false">
+                                <input type="hidden" name="postojecaPropustanja" id="postojecaPropustanja" value="[]">
+                                <input type="hidden" name="postojecaPropustanjaPocetak" id="postojecaPropustanja" value="[]">
+                                <input type="hidden" name="aktivniRedoviPropustanje" id="aktivniRedoviPropustanje" value="1">
+                                <script>
+                                    brojRedovaPropustanje = 1;
+                                    aktivniRedoviPropustanje = [1];
+                                    aktivniRedoviPropustanjeNaStartu = [];
+                                    postojecaPropustanjaPocetak = [];
+                                </script>
+                                <div id="propustanje_row_1">
+                                    <label class="col-lg-2 control-label" for="ipPropustanje1">Mrežno propuštanje IP:PORT :</label>
+                                    <div class="col-lg-2">
+                                        <input type="text" class="form-control" placeholder="IP" id="ipPropustanje1" name="ipPropustanje1" onchange="izmenaNalogaIliPropustanja(2, this)">
+                                    </div>
+                                    <div class="col-lg-1">
+                                        <input type="text" class="form-control" placeholder="PORT" id="portPropustanje1" name="portPropustanje1" onchange="izmenaNalogaIliPropustanja(2, this)">
+                                    </div>
+
+                                    <label class="col-lg-1 control-label" for="appUrl1">URL aplikacije</label>
+                                    <div class="col-lg-4">
+                                        <input type="text" class="form-control" placeholder="URL aplikacije" id="appUrl1" name="appUrl1" onchange="izmenaNalogaIliPropustanja(2, this)">
+                                    </div>
+
+                                    <div class="col-lg-2 text-center">
+                                        <a href="#/" onclick="addRowPropustanje()" class="button-back btn bg-telekom-slova">Dodaj red <i class="icon-plus3 position-right"></i></a>
+                                        <a href="#/" onclick="removeRowPropustanje(1, 0)" class="button-back btn bg-telekom-slova">Orisi red <i class="icon-minus3 position-right"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
                         <div class="form-group">
                             <label class="col-lg-2 control-label" for="napomena">Napomena:</label>
                             <div class="col-lg-10">
-                                <textarea rows="5" class="form-control" placeholder="Napomena" id="napomena" name="napomena" value="{{ $ugovor->napomena }}" disabled></textarea>
+                                <textarea rows="5" class="form-control" placeholder="Napomena" id="napomena" name="napomena" disabled>{{ $ugovor->napomena }}</textarea>
                             </div>
                         </div>
 
@@ -442,7 +662,7 @@
                                     <input type="hidden" name="id_komercijalni_uslov_{{ $loop->iteration }}" id="id_komercijalni_uslov_{{ $loop->iteration }}" value="{{ $kom_us['id'] }}" />
 
                                     <div class="col-md-2 form-group">
-                                        <select name="stavka_fakture_{{ $loop->iteration }}" id="stavka_fakture_{{ $loop->iteration }}" class="select">
+                                        <select name="stavka_fakture_{{ $loop->iteration }}" id="stavka_fakture_{{ $loop->iteration }}" class="select" @if(\Illuminate\Support\Facades\Auth::user()->getUloga->id == 3 || $ugovor->dekativiran == 1) disabled @endif>
                                             <option>{{ $kom_us['stavka_fakture']->naziv }}{{ $kom_us['vrsta_senzora'] != null ? $kom_us['vrsta_senzora']->naziv : '' }}</option>
                                         </select>
                                     </div>
@@ -453,15 +673,15 @@
                                     </div>
 
                                     <div class="col-md-1 form-group" style="margin-left: 5px;">
-                                        <input type="text" onchange="izmenaDatuma()" name="datum_kraj_{{ $loop->iteration }}" id="datum_kraj_{{ $loop->iteration }}" class="form-control pickadate-selectors" value="{{ $kom_us['datum_kraj'] }}" @if(!(date('Y', strtotime($kom_us['datum_kraj'])) >= date('Y') && date('m', strtotime($kom_us['datum_kraj'])) >= date('m'))) disabled @endif>
+                                        <input type="text" onchange="izmenaDatuma()" name="datum_kraj_{{ $loop->iteration }}" id="datum_kraj_{{ $loop->iteration }}" class="form-control pickadate-selectors" value="{{ $kom_us['datum_kraj'] }}" @if(!(date('Y', strtotime($kom_us['datum_kraj'])) >= date('Y') && date('m', strtotime($kom_us['datum_kraj'])) >= date('m'))) disabled @endif @if(\Illuminate\Support\Facades\Auth::user()->getUloga->id == 3 || $ugovor->dekativiran == 1) disabled @endif>
                                     </div>
 
                                     <div class="col-md-2 form-group" style="margin-left: 5px;">
-                                        <input type="number" name="naknada_{{ $loop->iteration }}" id="naknada_{{ $loop->iteration }}" class="form-control" readonly value="{{ $kom_us['naknada'] }}">
+                                        <input type="number" name="naknada_{{ $loop->iteration }}" id="naknada_{{ $loop->iteration }}" class="form-control" readonly value="{{ $kom_us['naknada'] }}" @if(\Illuminate\Support\Facades\Auth::user()->getUloga->id == 3 || $ugovor->dekativiran == 1) disabled @endif>
                                     </div>
 
                                     <div class="col-md-1 form-group" style="margin-left: 5px;">
-                                        <select name="status_{{ $loop->iteration }}" id="status_{{ $loop->iteration }}" data-placeholder="Status" class="select">
+                                        <select name="status_{{ $loop->iteration }}" id="status_{{ $loop->iteration }}" data-placeholder="Status" class="select" @if(\Illuminate\Support\Facades\Auth::user()->getUloga->id == 3 || $ugovor->dekativiran == 1) disabled @endif>
                                             @switch(intval($kom_us['status']))
                                                 @case(1)
                                                     <option value="1">Aktivni</option>
@@ -498,11 +718,11 @@
 
                                     <div class="col-md-1 form-group" style="margin-left: 5px;">
                                         <ul class="icons-list text-center form-control" style="border: none;" id="link_brisanje_{{ $loop->iteration }}">
-                                            @if(($kom_us['stavka_fakture']->tip_naknade == 2) && (date("Y", strtotime($kom_us['datum_pocetak'])) >= date("Y") && date('m', strtotime($kom_us['datum_pocetak'])) >= date('m')))
-                                                <li class="text-danger-800" style="padding-top: 6px;"><a href="#"  onclick="removeActiveRow({{ $loop->iteration }})" data-popup="tooltip" title="Obriši red: {{ $loop->iteration }}"><i style="font-size: 20px;" class="icon-trash"></i></a></li>
-                                            @else
-                                                <li class="text-danger-800" style="padding-top: 6px;"><a href="#"  onclick="return;" ><i style="font-size: 20px;" class="icon-close2"></i></a></li>
-                                            @endif
+{{--                                            @if(($kom_us['stavka_fakture']->tip_naknade == 2) && strtotime($kom_us['datum_pocetak']) > time())--}}
+                                                <li class="text-danger-800" style="padding-top: 6px;"><a href="#"  onclick="removeActiveRow({{ $loop->iteration }})" data-popup="tooltip" title="Obriši red: {{ $loop->iteration }}" @if(\Illuminate\Support\Facades\Auth::user()->getUloga->id == 3 || $ugovor->dekativiran == 1) disabled @endif><i style="font-size: 20px;" class="icon-trash"></i></a></li>
+{{--                                            @else--}}
+{{--                                                <li class="text-danger-800" style="padding-top: 6px;"><a href="#"  onclick="return;" ><i style="font-size: 20px;" class="icon-close2"></i></a></li>--}}
+{{--                                            @endif--}}
                                         </ul>
                                     </div>
                                 </div>
@@ -515,6 +735,7 @@
 
                                     <div class="col-md-1 form-group" style="margin-left: 5px; ">
                                         <label id="datum_kraj_{{ $loop->iteration }}_error" for="datum_kraj_{{ $loop->iteration }}" class="validation-error-label" style="display: none;">Mora biti poslednji dan u mesecu!</label>
+                                        <label id="datum_kraj_{{ $loop->iteration }}_error2" for="datum_kraj_{{ $loop->iteration }}" class="validation-error-label" style="display: none;">Mora biti veci od datuma pocetka!</label>
                                     </div>
 
                                     <div class="col-md-2 form-group" style="margin-left: 5px; ">
@@ -522,18 +743,28 @@
 
                                     <div class="col-md-1 form-group" style="margin-left: 5px; ">
                                     </div>
+
+                                    <div class="col-md-1 form-group" style="margin-left: 5px; ">
+                                        <label id="min_{{ $loop->iteration }}_error" for="min_1" class="validation-error-label" style="display: none;">Maximum mora biti veći od minimuma!</label>
+                                    </div>
+
+                                    <div class="col-md-1 form-group" style="margin-left: 5px; ">
+                                        <label id="max_{{ $loop->iteration }}_error" for="max_1" class="validation-error-label" style="display: none;">Maximum mora biti veći od minimuma!</label>
+                                    </div>
                                 </div>
                             @endforeach
                         @endif
 
                     </div>
                 </fieldset>
-                <a href="#" onclick="addRow()" class="button-back btn bg-telekom-slova">Dodaj novi red <i class="icon-plus3 position-right"></i></a>
-                <a href="#" onclick="deaktivirajUgovor({{$ugovor->id}})" class="button-back btn bg-telekom-slova">Deaktivacija ugovora <i class="icon-trash position-right"></i></a>
+                @if($ugovor->dekativiran == 0 && \Illuminate\Support\Facades\Auth::user()->getUloga->id != 3 )
+                    <a href="#" onclick="addRow()" class="button-back btn bg-telekom-slova">Dodaj novi red <i class="icon-plus3 position-right"></i></a>
+                    <a href="#" onclick="deaktivirajUgovor({{$ugovor->id}})" class="button-back btn bg-telekom-slova">Deaktivacija ugovora <i class="icon-trash position-right"></i></a>
+                @endif
             </fieldset>
 
             <input type="hidden" name="aktivne_stavke" id="aktivne_stavke" value="">
-            <button type="submit" class="btn bg-telekom-slova stepy-finish" id="submit_izmene" disabled>Sačuvaj <i class="icon-check position-right"></i></button>
+            <button type="submit" class="btn bg-telekom-slova stepy-finish" id="submit_izmene" name="edit_submit_button" disabled @if(\Illuminate\Support\Facades\Auth::user()->getUloga->id == 3 || $ugovor->dekativiran == 1) style="display: none;" @endif>Sačuvaj <i class="icon-check position-right"></i></button>
         </form>
     </div>
 @endsection

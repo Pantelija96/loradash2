@@ -56,7 +56,7 @@
                         </div>
 
                         <div class="form-group has-feedback has-feedback-left">
-                            <input type="text" id="email" name="email" class="form-control" placeholder="Email" value="pantelija@gmail.com">
+                            <input type="text" id="email" name="email" class="form-control" placeholder="Email">
                             <div class="form-control-feedback">
                                 <i class="icon-envelope text-muted"></i>
                             </div>
@@ -80,7 +80,7 @@
 
                 <!-- Footer -->
                 <div class="footer text-muted">
-                    &copy; 2021. <a href="{{ url('/logout') }}">IoT Dashboard App</a> by <a href="#" target="">TERI Engineering</a>
+                    &copy; 2021. <a href="{{ url('/logout') }}">IoT UgovoriApp</a> by <a href="#" target="">TERI Engineering</a>
                 </div>
                 <!-- /footer -->
 

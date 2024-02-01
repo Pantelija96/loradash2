@@ -42,7 +42,7 @@ function proveriStavkuFakture(){
 function deleteRecord(id_var){
     var notice = new PNotify({
         title: 'Confirmation',
-        text: '<p>Da li ste sigurni da želite da obršete stavku fakture?</p>',
+        text: '<p>Da li ste sigurni da želite da obršete stavku?</p>',
         hide: false,
         type: 'warning',
         addclass: 'bg-telekom-slova',

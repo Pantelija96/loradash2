@@ -27,6 +27,9 @@ Route::group(['middleware' => ['auth:web']], function (){
     Route::get('/home/{homeType?}', [FrontendController::class, 'home']);
     Route::get('/search/{homeType?}/', [FrontendController::class, 'search'])->name('search');
 
+    Route::get('/testEmail', [BackendController::class, 'testEmail']);
+    Route::get('/brisanjeNeuspelogUgovora/{id}', [BackendController::class, 'brisanjeNeuspelogUgovora2']);
+
     Route::get('/addnew',[FrontendController::class, 'addNewContract']);
     Route::post('/addnewcontract', [BackendController::class, 'addNewContract'])->name('addNewContract');
     Route::get('/editcontract/{id}', [FrontendController::class, 'editContract']);
@@ -38,6 +41,9 @@ Route::group(['middleware' => ['auth:web']], function (){
 
     Route::get('/export/{searchobj?}', [BackendController::class, 'exportExcel']);
     Route::get('/exporttest/{test}', [BackendController::class, 'exportExcel2']);
+
+    Route::get('/profile/{id}', [FrontendController::class, 'profile']);
+    Route::post('/profile', [BackendController::class, 'profile'])->name('profileEdit');
 
 
     Route::prefix('/ajax')->group(function (){
@@ -56,6 +62,9 @@ Route::group(['middleware' => ['auth:web']], function (){
             Route::get('/lokacijaapp/{id}', [BackendController::class, 'deleteLokacijuApp']);
             Route::get('/komercijalniuslov/{id}', [BackendController::class, 'deleteKomUslov']);
             Route::get('/dekativirajugovor/{id}', [BackendController::class, 'deaktivirajUgovor']);
+
+            Route::get('/pojedinacninalog/{id}', [BackendController::class, 'deletePojedinacniNaloz']);
+            Route::get('/propustanje/{id}', [BackendController::class, 'deletePropustanje']);
         });
     });
 

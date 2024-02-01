@@ -3452,7 +3452,8 @@ select[multiple].input-group-xs > .input-group-btn > .btn {
   .navbar-default > .navbar-nav > li > a:not(.collapsed),
   .navbar-default > .navbar-nav > li > a:hover,
   .navbar-default > .navbar-nav > li > a:focus {
-    background-color: #fcfcfc;
+      color: black;
+      background-color: #fcfcfc;
   }
 }
 .navbar-inverse {
@@ -6198,4 +6199,17 @@ h6.panel-title,
 
 .picker__holder{
     min-width: 250px;
+}
+
+.test span{
+    color: white;
+}
+
+
+.test:active span{
+    color: black;
+}
+
+.test:hover span{
+    color: black;
 }

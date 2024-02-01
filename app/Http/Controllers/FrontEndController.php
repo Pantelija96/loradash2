@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Resources\KomercijalniUslovResource;
 use App\Http\Resources\UgovorResource;
 use App\Http\Resources\UserResource;
+use App\Models\IP;
 use App\Models\KomercijalniUslovi;
 use App\Models\LokacijaApp;
 use App\Models\NazivServisa;
 use App\Models\Partner;
 use App\Models\PartnerUgovor;
+use App\Models\PojedinacniNalog;
 use App\Models\StavkaFakture;
 use App\Models\Tehnologije;
 use App\Models\TehnologijeUgovor;
@@ -138,12 +140,25 @@ class FrontendController extends Controller
         //return dd($this->data);
         return view('pages.search', $this->data);
     }
+    public function profile($id){
+        //return dd($id);
+        $userId = Auth::id();
+        if($id == $userId){
+            $this->data['profile'] = User::whereId($id)->first();
+            //return dd($this->data);
+            return view('pages.profile', $this->data);
+        }
+
+    }
     public function editContract($id){
         $this->homePageData(null);
         $this->data['lokacije_app'] = LokacijaApp::wherePrikazi(true)->get();
         $this->data['vrste_senzora'] = VrstaSenzora::wherePrikazi(true)->get();
         $this->data['stavke_fakture'] = StavkaFakture::wherePrikazi(true)->get();
         $this->data['ugovor'] = Ugovor::whereId($id)->first();
+
+        $this->data['pojedinacni_nalozi'] = PojedinacniNalog::whereIdUgovor($id)->where('deleted', false)->get();
+        $this->data['ips'] = IP::whereIdUgovor($id)->where('deleted', false)->get();
 
         $this->data['partneri_naziv'] = "";
         $this->data['partneri_ugovora'] = [];
@@ -174,7 +189,7 @@ class FrontendController extends Controller
 
         $this->data['komercijalni_uslovi'] = KomercijalniUslovResource::collection(KomercijalniUslovi::whereIdUgovor($id)->where('obrisana',false)->get())->resolve();
 
-        //return dd($this->data['komercijalni_uslovi']);
+//        return dd($this->data);
         return view('pages.editContract', $this->data);
     }
     public function addNewContract(){
